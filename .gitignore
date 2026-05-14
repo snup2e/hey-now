@@ -1,0 +1,68 @@
+# 강의자료 (저작권)
+project_instruction/
+
+# Claude Code 로컬 설정
+.claude/
+
+# STM32CubeIDE 빌드 산출물
+Debug/
+Release/
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.o
+*.d
+*.su
+*.cyclo
+*.ld.dep
+
+# STM32CubeIDE 워크스페이스 메타데이터
+.metadata/
+.settings/
+.cproject.bak
+.project.bak
+*.launch
+
+# Python / Jupyter (모델 학습용)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+venv/
+env/
+.venv/
+*.egg-info/
+
+# 데이터셋 (용량 큼)
+data/raw/
+data/processed/
+*.wav
+*.mp3
+*.npy
+*.npz
+!sample/*.wav
+
+# 모델 산출물 (대용량)
+models/checkpoints/
+*.h5
+*.pb
+*.ckpt
+# .tflite 파일은 commit (펌웨어 통합용)
+
+# IDE / 편집기
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 기타
+*.log
+*.tmp
