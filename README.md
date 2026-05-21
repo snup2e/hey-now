@@ -2,6 +2,13 @@
 
 > 지하철 안내방송 기반 하차역 알림 시스템 — **임베디드시스템설계 기말 프로젝트** (성균관대학교)
 
+### [▶ 중간 발표 슬라이드 열기](https://snup2e.github.io/hey-now/)
+
+[![중간발표](https://img.shields.io/badge/%E2%96%B6%20%EC%A4%91%EA%B0%84%EB%B0%9C%ED%91%9C%20%EC%8A%AC%EB%9D%BC%EC%9D%B4%EB%93%9C-%EC%97%B4%EA%B8%B0-1d6dff?style=for-the-badge)](https://snup2e.github.io/hey-now/)
+
+> 강의실 PC에서: `github.com/snup2e/hey-now` 접속 → 위 배지 클릭 → 발표 시작. 키보드 `↓` / `Space`로 다음, `F`로 전체화면, `?`로 단축키.
+
+
 GPS·WiFi가 닿지 않는 지하 환경에서, STM32 F411RE 보드가 차내 안내방송("이번 역은 ~~역입니다")을 TinyML로 인식해 현재 위치와 하차역을 알려주는 시스템입니다. 제품 모델명은 **Hey now!** — 놓친 안내방송을 디바이스가 대신 잡아 사용자의 주의를 환기시킨다는 의미.
 
 ## 동기
