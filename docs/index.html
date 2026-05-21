@@ -1605,10 +1605,11 @@ helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHel
   let hopIdx = 0;
   let filled = 0;
   let nextHopAt = 0;
-  const HOP_MS  = 90;
-  const HOLD_MS = 650;
-  const CNN_MS  = 2600;
-  const SM_MS   = 1300;
+  const HOP_MS    = 90;
+  const HOLD_MS   = 650;
+  const CNN_MS    = 2600;
+  const SM_MS     = 1300;
+  const DONE_HOLD = 2800; // show the final result for a beat before looping
 
   let running = false;
   let rafId = null;
@@ -1668,10 +1669,18 @@ helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHel
       drawWave(hopIdx);
       drawSpec(filled, hopIdx);
       drawCnn(1);
-      // final paint then stop the loop
-      running = false;
-      rafId = null;
-      return;
+      // hold the final result, then restart the whole pipeline
+      if(ts - phaseStart >= DONE_HOLD){
+        phase = PHASE.STFT;
+        hopIdx = 0;
+        filled = 0;
+        nextHopAt = 0;
+        phaseStart = 0;
+        resetUI();
+        drawWave(0);
+        drawSpec(0, 0);
+        drawCnn(0);
+      }
     }
 
     rafId = requestAnimationFrame(tick);
