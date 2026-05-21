@@ -48,9 +48,21 @@
     position:relative;
     display:flex;
     flex-direction:column;
-    padding:6vh 7vw 7vh;
+    padding:6vh 7vw 11vh;
     overflow:hidden;
     background:var(--bg);
+  }
+
+  /* Wraps slide content so it vertically centers between header and page number */
+  .slide-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:stretch;
+    width:100%;
+    min-height:0;
+    gap:14px;
   }
 
   /* ====== Slide header (number + title) ====== */
@@ -220,7 +232,7 @@
   }
 
   /* ====== Slide 3: 기능 정의 ====== */
-  .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;flex:1;align-items:stretch;}
+  .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center;}
   .lead{
     font-size:1.65rem;font-weight:700;line-height:1.4;
     margin-bottom:24px;letter-spacing:-.01em;
@@ -529,8 +541,10 @@
   }
 
   /* Slide 3 illustration image */
+  .illu{max-height:62vh;}
   .illu .photo{
-    width:100%;max-width:520px;height:auto;
+    width:100%;max-width:460px;max-height:60vh;
+    object-fit:contain;height:auto;
     border-radius:18px;
     box-shadow:0 30px 60px -24px rgba(20,30,60,.45);
     transform:translateZ(0);
@@ -601,62 +615,59 @@
   /* ============================================================
      Slide 6 (data): two cards + Seoul Metro screenshot
      ============================================================ */
-  .data-row{
-    display:grid;grid-template-columns:1fr 1.15fr;gap:32px;flex:1;align-items:stretch;
+  .slide[data-slide="6"] .kws-lead{
+    font-size:2.1rem;font-weight:800;letter-spacing:-.01em;margin-bottom:24px;
   }
-  .data-cards{display:flex;flex-direction:column;gap:18px;}
-  .data-cards .path-card{flex:1;padding:24px 26px;}
-  .data-cards .path-card h3{font-size:1.35rem;}
-  .data-cards .path-card p{font-size:.95rem;}
+  .data-row{
+    display:grid;grid-template-columns:1fr 1.2fr;gap:28px;
+    max-height:58vh;align-items:stretch;
+  }
+  .data-cards{display:flex;flex-direction:column;gap:14px;}
+  .data-cards .path-card{flex:1;padding:18px 22px;gap:10px;}
+  .data-cards .path-card h3{font-size:1.2rem;}
+  .data-cards .path-card h4{font-size:.78rem;}
+  .data-cards .path-card p{font-size:.9rem;line-height:1.55;}
+  .data-cards .path-card .ribbon{padding:5px 46px;font-size:.78rem;top:14px;right:-44px;}
+  .data-cards .path-card .tag{font-size:.78rem;padding:4px 9px;}
   .archive-frame{
-    background:#fff;border:1.5px solid var(--line);border-radius:18px;
+    background:#fff;border:1.5px solid var(--line);border-radius:14px;
     box-shadow:0 24px 50px -22px rgba(20,30,60,.3);
     overflow:hidden;display:flex;flex-direction:column;
+    max-height:58vh;
   }
   .archive-bar{
-    background:var(--surface);padding:8px 14px;display:flex;align-items:center;gap:8px;
-    border-bottom:1px solid var(--line);
+    background:var(--surface);padding:7px 12px;display:flex;align-items:center;gap:7px;
+    border-bottom:1px solid var(--line);flex-shrink:0;
   }
-  .archive-bar .dot{width:10px;height:10px;border-radius:50%;background:#e74c3c;}
+  .archive-bar .dot{width:9px;height:9px;border-radius:50%;background:#e74c3c;}
   .archive-bar .dot.y{background:#f1c40f;}
   .archive-bar .dot.g{background:#2ecc71;}
   .archive-bar .url{
-    margin-left:8px;font-size:.78rem;color:var(--ink-soft);
+    margin-left:6px;font-size:.74rem;color:var(--ink-soft);
     font-family:ui-monospace,'JetBrains Mono',monospace;
     background:#fff;border:1px solid var(--line);
-    padding:3px 10px;border-radius:6px;flex:1;
+    padding:3px 9px;border-radius:6px;flex:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .archive-frame img{
-    width:100%;height:100%;object-fit:cover;object-position:top center;
-    display:block;background:#fff;flex:1;
+    width:100%;flex:1;min-height:0;
+    object-fit:contain;object-position:center;
+    display:block;background:#fff;padding:8px;
   }
 
   /* ============================================================
-     Slide 7 (new): hand-drawn architecture sketch + caption
+     Slide 7: hand-drawn architecture sketch (single big panel)
      ============================================================ */
-  .sketch-row{
-    display:grid;grid-template-columns:1.4fr 1fr;gap:36px;flex:1;align-items:stretch;
-  }
   .sketch-host{
     background:linear-gradient(180deg,#fbfbfd,#f1f3f7);
     border-radius:22px;
     display:flex;align-items:center;justify-content:center;
-    padding:20px;overflow:hidden;
+    padding:24px;overflow:hidden;
     box-shadow:0 24px 50px -28px rgba(20,30,60,.25);
+    width:100%;max-width:min(1100px,90vw);
+    height:62vh;margin:0 auto;
   }
   .sketch-host img{max-width:100%;max-height:100%;object-fit:contain;}
-  .sketch-side{display:flex;flex-direction:column;justify-content:center;gap:18px;}
-  .sketch-side h3{
-    font-size:1.4rem;font-weight:800;letter-spacing:-.01em;
-    color:var(--primary);
-  }
-  .sketch-side p{font-size:1rem;line-height:1.7;color:var(--ink-soft);}
-  .sketch-side .note{
-    background:var(--surface);border-radius:14px;padding:16px 18px;
-    font-size:.92rem;color:var(--ink);line-height:1.65;
-    border-left:3px solid var(--primary);
-  }
-  .sketch-side .note strong{color:var(--primary-deep);font-weight:800;}
 
   /* Smaller screens fallback (projector usually 1080p anyway) */
   @media (max-width:1100px){
@@ -742,6 +753,7 @@
       <h2 class="s-title anim d2">기능 정의</h2>
     </div>
 
+    <div class="slide-body">
     <div class="two-col">
       <div>
         <div class="lead anim d3">
@@ -771,6 +783,7 @@
         <img class="photo" src="img/persona.png" alt="이어폰을 끼고 안내방송을 놓치는 지하철 승객" loading="lazy">
       </div>
     </div>
+    </div>
 
     <div class="page-num">03</div>
   </section>
@@ -782,6 +795,7 @@
       <h2 class="s-title anim d2">구현방법</h2>
     </div>
 
+    <div class="slide-body">
     <div class="kws-lead anim d3">1. KeyWord Spotting (KWS)</div>
     <div class="kws-sub anim d4">
       <code>"이번 역은 ~"</code> 이 들리면 <code>0 / 1</code> 출력으로 다음 단계 CNN을 Triggering
@@ -803,6 +817,7 @@
         <tr><td>우리 사용</td><td><span class="no">✗</span> STM32 한계 초과</td><td><span class="yes">✓</span> 정형 안내방송에 최적</td></tr>
       </tbody>
     </table>
+    </div>
 
     <div class="page-num">04</div>
   </section>
@@ -855,7 +870,8 @@
       <h2 class="s-title anim d2">구현방법</h2>
     </div>
 
-    <div class="kws-lead anim d3" style="margin-bottom:28px;">3. 데이터</div>
+    <div class="slide-body">
+    <div class="kws-lead anim d3">3. 데이터</div>
 
     <div class="data-row">
       <div class="data-cards">
@@ -891,6 +907,7 @@
         <img src="img/seoul-archive.png" alt="서울교통공사 자료실 1-4호선 안내방송 음원 게시글" loading="lazy">
       </div>
     </div>
+    </div>
 
     <div class="page-num">06</div>
   </section>
@@ -902,26 +919,9 @@
       <h2 class="s-title anim d2">시스템 아키텍쳐</h2>
     </div>
 
-    <div class="sketch-row">
-      <div class="sketch-host anim from-left d3">
+    <div class="slide-body">
+      <div class="sketch-host anim from-scale d3">
         <img src="img/architecture-sketch.png" alt="시스템 아키텍쳐 손그림: 마이크 → KWS → CNN → main.c → Display" loading="lazy">
-      </div>
-
-      <div class="sketch-side">
-        <h3 class="anim d4">신호 흐름 한눈에 보기</h3>
-        <p class="anim d4">
-          차내 안내방송 <strong>"다음 역은 OO역입니다"</strong> 가 마이크로 들어오면,
-          STM32 보드 안에서 <strong>KWS → CNN → 상태 갱신 → 디스플레이</strong> 순으로 처리됩니다.
-        </p>
-        <div class="note anim d5">
-          <strong>KWS</strong> 는 "다음 역은?" 트리거만 골라내고,<br>
-          <strong>CNN</strong> 은 그 뒤따라오는 역 이름 구간만 분류해<br>
-          <code>previous_station</code> · <code>next_station</code> 두 상태를 갱신합니다.
-        </div>
-        <p class="anim d6" style="font-size:.92rem;color:var(--ink-soft);">
-          → 사용자는 디스플레이에서 "지난 역 / 다음 역" 을 직접 확인할 수 있어
-          이어폰을 끼거나 청각장애가 있어도 자기 위치를 놓치지 않습니다.
-        </p>
       </div>
     </div>
 
