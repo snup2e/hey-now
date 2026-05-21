@@ -551,65 +551,125 @@
   }
 
   /* ============================================================
-     Slide 5 (new): STFT process — waveform + sliding window + spectrogram
+     Slide 5: STFT → CNN → Softmax pipeline
      ============================================================ */
-  .stft{
-    flex:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:14px;
-    align-items:stretch;justify-items:center;
+  .pipeline{
+    flex:1;display:grid;grid-template-columns:1fr 1.05fr;gap:22px;
+    width:100%;min-height:0;align-items:stretch;
   }
-  .stft-lead{font-size:1.4rem;font-weight:700;text-align:center;}
-  .stft-sub{font-size:1.02rem;color:var(--ink-soft);text-align:center;}
-  .stft-stage{
-    position:relative;width:min(960px,94%);
-    display:flex;flex-direction:column;gap:6px;
+  .pipe-stft{display:flex;flex-direction:column;gap:6px;min-height:0;}
+  .pipe-cls{
+    display:grid;grid-template-rows:1.25fr 1fr;gap:12px;min-height:0;
   }
+
   .stft-row{
     position:relative;background:#0c0c16;border-radius:12px;
-    overflow:hidden;
-    box-shadow:0 18px 40px -22px rgba(20,30,60,.35);
+    overflow:hidden;box-shadow:0 18px 40px -22px rgba(20,30,60,.35);
+    flex:1;min-height:0;
   }
-  .stft-row.wave{height:22vh;background:#f5f7fc;}
-  .stft-row.spec{height:32vh;}
+  .stft-row.wave{flex:0 0 30%;background:#f5f7fc;}
+  .stft-row.spec{flex:1;}
   .stft-row canvas{display:block;width:100%;height:100%;}
   .stft-label{
     position:absolute;left:14px;top:10px;
-    font-size:.78rem;font-weight:700;letter-spacing:.06em;
+    font-size:.78rem;font-weight:700;letter-spacing:.04em;
     color:rgba(255,255,255,.85);
     background:rgba(20,25,35,.65);
     padding:4px 10px;border-radius:999px;
-    pointer-events:none;
+    pointer-events:none;z-index:1;
   }
   .stft-row.wave .stft-label{color:var(--ink);background:#fff;border:1px solid var(--line);}
   .stft-axis{
     font-size:.7rem;color:rgba(255,255,255,.6);
-    position:absolute;right:14px;top:10px;font-weight:600;
+    position:absolute;right:14px;top:10px;font-weight:600;z-index:1;
   }
   .stft-row.wave .stft-axis{color:var(--ink-soft);}
 
   .stft-step{
     display:flex;justify-content:center;align-items:center;gap:10px;
-    font-weight:700;font-size:.95rem;color:var(--primary);
-    margin:2px 0;
+    font-weight:700;font-size:.9rem;color:var(--primary);margin:2px 0;
+    flex-shrink:0;
   }
   .stft-step .pill{
     background:linear-gradient(135deg, var(--primary), var(--primary-soft));
-    color:#fff;padding:5px 14px;border-radius:999px;
+    color:#fff;padding:4px 12px;border-radius:999px;
     box-shadow:0 8px 18px -6px rgba(29,109,255,.55);
-    font-weight:800;letter-spacing:.04em;
+    font-weight:800;letter-spacing:.04em;font-size:.82rem;
   }
-  .stft-step .arrow-v{color:var(--primary);font-size:1.1rem;}
+  .stft-step .arrow-v{color:var(--primary);font-size:1rem;}
 
-  .stft-legend{
-    display:flex;gap:18px;align-items:center;justify-content:center;
-    font-size:.85rem;color:var(--ink-soft);margin-top:4px;
+  /* CNN canvas panel */
+  .cnn-panel{
+    background:#0a0b13;border-radius:12px;padding:10px 12px 8px;
+    display:flex;flex-direction:column;gap:6px;min-height:0;
+    box-shadow:0 18px 40px -22px rgba(20,30,60,.45);
+    position:relative;
   }
-  .stft-legend .swatch{
-    width:14px;height:14px;border-radius:4px;
+  .cnn-panel .panel-head{
+    font-size:.78rem;font-weight:800;letter-spacing:.04em;
+    color:#8ab2ff;flex-shrink:0;
   }
-  .stft-legend .swatch.win{background:rgba(29,109,255,.35);border:1.5px solid var(--primary);}
-  .stft-legend .swatch.scale{
-    width:140px;
-    background:linear-gradient(to right,#0c0c16,#3b1953,#9b1a4b,#e5563a,#f5b14f,#fff3c4);
+  #cnn-canvas{
+    width:100%;flex:1;min-height:0;display:block;
+    border-radius:8px;background:#0a0b13;
+  }
+
+  /* Softmax bars + final result */
+  .result-panel{
+    background:var(--surface);border-radius:12px;padding:12px 16px;
+    display:flex;flex-direction:column;gap:8px;min-height:0;
+  }
+  .result-panel .panel-head{
+    font-size:.78rem;font-weight:800;letter-spacing:.04em;
+    color:var(--primary);
+  }
+  #softmax-bars{
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .bar{
+    display:grid;grid-template-columns:78px 1fr 42px;
+    align-items:center;gap:10px;font-size:.86rem;
+  }
+  .bar .name{
+    font-weight:600;color:var(--ink-soft);text-align:right;
+  }
+  .bar .track{
+    height:11px;background:#e3e8f2;border-radius:6px;overflow:hidden;
+  }
+  .bar .fill{
+    height:100%;width:0;border-radius:6px;
+    background:linear-gradient(90deg, #6aa1ff, #1d6dff);
+    transition:width 1s cubic-bezier(.3,.6,.2,1);
+  }
+  .bar.best .fill{
+    background:linear-gradient(90deg, #ffb13c, #ff5a4d);
+    box-shadow:0 0 0 1px rgba(255,90,77,.3);
+  }
+  .bar .prob{
+    font-weight:700;color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;text-align:right;
+  }
+  .bar.best{font-weight:800;}
+  .bar.best .name{color:var(--accent);}
+  .bar.best .prob{color:var(--accent);}
+
+  #final-result{
+    margin-top:auto;padding:10px 14px;border-radius:10px;
+    background:linear-gradient(135deg, var(--primary), var(--primary-deep));
+    color:#fff;font-size:1.02rem;font-weight:800;
+    display:flex;align-items:center;gap:10px;
+    opacity:0;transform:translateY(8px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  #final-result.show{opacity:1;transform:none;}
+  #final-result .r-arrow{
+    width:22px;height:22px;border-radius:50%;
+    background:#fff;color:var(--primary-deep);
+    display:flex;align-items:center;justify-content:center;
+    font-size:.85rem;font-weight:900;flex-shrink:0;
+  }
+  #final-result .r-station{
+    flex:1;font-size:1.15rem;letter-spacing:-.01em;
   }
 
   /* ============================================================
@@ -829,35 +889,53 @@
       <h2 class="s-title anim d2">구현방법</h2>
     </div>
 
-    <div class="stft">
-      <div class="stft-lead anim d3">2. Spectrogram 변환 — STFT</div>
-      <div class="stft-sub anim d4">슬라이딩 윈도우 + FFT로 음성을 시간-주파수 이미지로 바꿔 CNN의 입력으로 사용</div>
-
-      <div class="stft-stage anim d5">
+    <div class="slide-body">
+    <div class="pipeline anim d3">
+      <!-- Left: STFT (waveform + sliding window + spectrogram) -->
+      <div class="pipe-stft">
         <div class="stft-row wave">
-          <span class="stft-label">① 시간 영역 신호 · waveform</span>
+          <span class="stft-label">① waveform</span>
           <span class="stft-axis">time →</span>
           <canvas id="wave-canvas" width="1600" height="280"></canvas>
         </div>
 
         <div class="stft-step">
           <span class="arrow-v">▼</span>
-          <span class="pill">② STFT · 슬라이딩 윈도우 × FFT</span>
+          <span class="pill">STFT · 슬라이딩 윈도우 × FFT</span>
           <span class="arrow-v">▼</span>
         </div>
 
         <div class="stft-row spec">
-          <span class="stft-label">③ 주파수 × 시간 · spectrogram</span>
+          <span class="stft-label">② spectrogram</span>
           <span class="stft-axis">↑ freq</span>
           <canvas id="spec-canvas" width="1600" height="500"></canvas>
         </div>
       </div>
 
-      <div class="stft-legend anim d6">
-        <span class="swatch win"></span><span>슬라이딩 윈도우 (Hann)</span>
-        <span style="margin-left:10px;"></span>
-        <span class="swatch scale"></span><span>magnitude (-80 dB → 0 dB)</span>
+      <!-- Right: CNN forward pass + Softmax bars -->
+      <div class="pipe-cls">
+        <div class="cnn-panel">
+          <div class="panel-head">③ CNN forward pass</div>
+          <canvas id="cnn-canvas" width="1100" height="500"></canvas>
+        </div>
+
+        <div class="result-panel">
+          <div class="panel-head">④ Softmax 분류</div>
+          <div id="softmax-bars">
+            <div class="bar" data-name="의왕역"><span class="name">의왕역</span><div class="track"><div class="fill"></div></div><span class="prob">0%</span></div>
+            <div class="bar" data-name="신도림역"><span class="name">신도림역</span><div class="track"><div class="fill"></div></div><span class="prob">0%</span></div>
+            <div class="bar" data-name="영등포역"><span class="name">영등포역</span><div class="track"><div class="fill"></div></div><span class="prob">0%</span></div>
+            <div class="bar" data-name="노량진역"><span class="name">노량진역</span><div class="track"><div class="fill"></div></div><span class="prob">0%</span></div>
+            <div class="bar best" data-name="성균관대역"><span class="name">성균관대역</span><div class="track"><div class="fill"></div></div><span class="prob">0%</span></div>
+          </div>
+          <div id="final-result">
+            <span class="r-arrow">✓</span>
+            <span>분류 결과 →</span>
+            <span class="r-station">─</span>
+          </div>
+        </div>
       </div>
+    </div>
     </div>
 
     <div class="page-num">05</div>
@@ -1116,10 +1194,13 @@ document.getElementById('help-close').addEventListener('click', closeHelp);
 helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHelp(); });
 
 /* ============================================================
- * STFT animation — waveform + sliding window + synced spectrogram
- * The same sliding window position drives both:
- *   • a translucent box on the waveform (with Hann window shape)
- *   • the next column being filled into the spectrogram
+ * STFT → CNN → Softmax pipeline on slide 5
+ * One sliding window drives both the waveform overlay and the
+ * spectrogram. When the spectrogram is fully filled, animation
+ * does NOT restart — instead the spec image is fed into a CNN
+ * forward-pass visualization (3blue1brown-style nodes & weight
+ * lines), softmax bars fill up over candidate stations, and the
+ * final result "성균관대역" is revealed. The animation then halts.
  * ============================================================ */
 (function stft(){
   const waveCanvas = document.getElementById('wave-canvas');
@@ -1295,54 +1376,324 @@ helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHel
     }
   }
 
-  // ----- Animation loop -----
-  let running = false;
-  let rafId = null;
-  let hopIdx = 0;        // window position
-  let filled = 0;        // how many columns of spec drawn so far
-  let nextHopAt = 0;     // ms time to advance
-  const HOP_MS = 90;     // ms between hops
-  const HOLD_MS = 1300;  // pause at the end of a cycle
+  /* ============================================================
+   * CNN forward-pass visualization (3blue1brown-style)
+   * Layers: input thumbnail → conv-ish nodes → conv-ish → dense → output(5).
+   * Activation flows left → right by phase progress (0..1).
+   * Final output: softmax over 5 station candidates, highest = 성균관대역.
+   * ============================================================ */
+  const cnnCanvas = document.getElementById('cnn-canvas');
+  const cctx = cnnCanvas ? cnnCanvas.getContext('2d') : null;
+  const CW = cnnCanvas ? cnnCanvas.width  : 0;
+  const CH = cnnCanvas ? cnnCanvas.height : 0;
 
-  function tick(ts){
-    if(!running){ rafId = null; return; }
-    if(!nextHopAt) nextHopAt = ts + HOP_MS;
+  const stations = ['의왕역','신도림역','영등포역','노량진역','성균관대역'];
+  const probs    = [0.04, 0.10, 0.06, 0.07, 0.73]; // softmax target (성균관대역 max)
 
-    if(ts >= nextHopAt){
-      filled = hopIdx + 1;
-      hopIdx++;
-      if(hopIdx >= N_HOPS){
-        nextHopAt = ts + HOP_MS + HOLD_MS;
-        // schedule reset after this draw
-        setTimeout(() => {
-          hopIdx = 0;
-          filled = 0;
-          nextHopAt = performance.now() + HOP_MS;
-        }, HOLD_MS);
-        hopIdx = N_HOPS - 1; // hold last position visually
-      } else {
-        nextHopAt = ts + HOP_MS;
+  // Each layer: thumb (input image), or nodes (circles), or output (with labels)
+  const layers = [
+    { kind:'thumb',  x:0.07, sizeW:0.10, sizeH:0.55 },
+    { kind:'nodes',  x:0.28, n:9 },
+    { kind:'nodes',  x:0.46, n:12 },
+    { kind:'nodes',  x:0.65, n:8 },
+    { kind:'output', x:0.83, n:5 },
+  ];
+  const layerNames = ['INPUT','CONV','CONV','DENSE','OUTPUT'];
+
+  function nodePositions(L){
+    if(L.kind === 'thumb'){
+      const w = L.sizeW * CW;
+      const h = L.sizeH * CH;
+      return [{ x:L.x*CW, y:CH*0.5, thumb:true, w, h }];
+    }
+    const cx = L.x * CW;
+    const n  = L.n;
+    const usable = CH * 0.74;
+    const spacing = Math.min(34, usable / Math.max(n - 1, 1));
+    const totalH = (n - 1) * spacing;
+    const startY = CH/2 - totalH/2;
+    const arr = [];
+    for(let j = 0; j < n; j++) arr.push({ x:cx, y:startY + j*spacing });
+    return arr;
+  }
+
+  // pseudo random in [0,1] given two ints (deterministic, no seeding library needed)
+  function rng(a, b){
+    const v = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  function drawCnn(progress){
+    if(!cctx) return;
+    cctx.fillStyle = '#0a0b13';
+    cctx.fillRect(0, 0, CW, CH);
+
+    // subtle grid backdrop
+    cctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    cctx.lineWidth = 1;
+    for(let x = 0; x < CW; x += 36){
+      cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, CH); cctx.stroke();
+    }
+
+    const positions = layers.map(L => nodePositions(L));
+
+    // staggered per-layer activation 0..1
+    const lp = [
+      Math.max(0, Math.min(1, (progress - 0.00) / 0.18)),
+      Math.max(0, Math.min(1, (progress - 0.15) / 0.20)),
+      Math.max(0, Math.min(1, (progress - 0.34) / 0.20)),
+      Math.max(0, Math.min(1, (progress - 0.52) / 0.20)),
+      Math.max(0, Math.min(1, (progress - 0.72) / 0.28)),
+    ];
+
+    // node activations
+    function nodeAct(i, j){
+      const lpi = lp[i];
+      if(i === positions.length - 1){
+        // output layer: scale by target probs (성균관대역 brightest)
+        const pmax = Math.max.apply(null, probs);
+        return lpi * (0.35 + 0.65 * probs[j] / pmax);
+      }
+      const noise = 0.35 + 0.65 * rng(i, j);
+      return lpi * noise;
+    }
+
+    // edges (between consecutive layers)
+    for(let i = 1; i < positions.length; i++){
+      const prev = positions[i-1];
+      const curr = positions[i];
+      for(let j = 0; j < curr.length; j++){
+        const cAct = nodeAct(i, j);
+        for(let k = 0; k < prev.length; k++){
+          const sx = prev[k].thumb ? prev[k].x + prev[k].w*0.5 : prev[k].x;
+          const sy = prev[k].y;
+          const wstr = rng(i*31 + k, j); // 0..1
+          // intensity follows target activation × random weight
+          const a = 0.03 + 0.45 * cAct * (0.25 + 0.75 * wstr);
+          cctx.strokeStyle = `rgba(120,170,255,${a})`;
+          cctx.lineWidth = 0.5 + 0.7 * cAct * wstr;
+          cctx.beginPath();
+          cctx.moveTo(sx, sy);
+          cctx.lineTo(curr[j].x, curr[j].y);
+          cctx.stroke();
+        }
       }
     }
 
-    drawWave(hopIdx);
-    drawSpec(filled, hopIdx);
+    // nodes
+    for(let i = 0; i < positions.length; i++){
+      const layer = positions[i];
+      const spec  = layers[i];
+      for(let j = 0; j < layer.length; j++){
+        const node = layer[j];
+
+        if(node.thumb){
+          // input thumbnail = the spectrogram canvas content
+          const tw = node.w, th = node.h;
+          const tx = node.x - tw/2, ty = node.y - th/2;
+          const a = lp[i];
+          cctx.shadowColor = `rgba(106,161,255,${0.5*a})`;
+          cctx.shadowBlur = 14 * a;
+          cctx.strokeStyle = `rgba(255,255,255,${0.35 + 0.55*a})`;
+          cctx.lineWidth = 1.5;
+          cctx.strokeRect(tx - 1, ty - 1, tw + 2, th + 2);
+          cctx.shadowBlur = 0;
+          try {
+            cctx.drawImage(specCanvas, 0, 0, specCanvas.width, specCanvas.height, tx, ty, tw, th);
+          } catch(_e){}
+          continue;
+        }
+
+        const a = nodeAct(i, j);
+        const isOut = spec.kind === 'output';
+        const r = isOut ? 10 : 7;
+
+        if(a > 0.45){
+          cctx.shadowColor = 'rgba(255,210,90,0.55)';
+          cctx.shadowBlur = 12 * a;
+        } else {
+          cctx.shadowBlur = 0;
+        }
+        // fill: dark → warm bright with activation
+        const cr = 26 + 220 * a;
+        const cg = 26 + 200 * a;
+        const cb = 32 + 80 * a;
+        cctx.fillStyle = `rgb(${cr|0},${cg|0},${cb|0})`;
+        cctx.beginPath();
+        cctx.arc(node.x, node.y, r, 0, Math.PI*2);
+        cctx.fill();
+        cctx.shadowBlur = 0;
+
+        cctx.strokeStyle = `rgba(255,230,120,${0.25 + 0.75 * a})`;
+        cctx.lineWidth = 1.4;
+        cctx.stroke();
+
+        // output station labels
+        if(isOut){
+          const isBest = j === stations.length - 1;
+          const lpi = lp[i];
+          cctx.fillStyle = isBest
+            ? `rgba(255,170,110,${0.55 + 0.45*lpi})`
+            : `rgba(220,225,240,${0.45 + 0.55*lpi})`;
+          cctx.font = `${isBest ? '800' : '600'} 13px Pretendard, sans-serif`;
+          cctx.textAlign = 'left';
+          cctx.textBaseline = 'middle';
+          cctx.fillText(stations[j], node.x + r + 7, node.y);
+        }
+      }
+    }
+
+    // layer names at bottom
+    for(let i = 0; i < layers.length; i++){
+      const L = layers[i];
+      cctx.fillStyle = `rgba(180,200,255,${0.35 + 0.55 * lp[i]})`;
+      cctx.font = 'bold 10px Pretendard, sans-serif';
+      cctx.textAlign = 'center';
+      cctx.fillText(layerNames[i], L.x * CW, CH - 10);
+    }
+  }
+
+  /* ============================================================
+   * Softmax bars (DOM) + final result reveal
+   * ============================================================ */
+  const barEls   = document.querySelectorAll('#softmax-bars .bar');
+  const finalEl  = document.getElementById('final-result');
+  const finalSta = finalEl ? finalEl.querySelector('.r-station') : null;
+  let softmaxStarted = false;
+
+  function startSoftmax(){
+    if(softmaxStarted) return;
+    softmaxStarted = true;
+    barEls.forEach((b, i) => {
+      const fill = b.querySelector('.fill');
+      const prob = b.querySelector('.prob');
+      requestAnimationFrame(() => { fill.style.width = (probs[i] * 100) + '%'; });
+      const target = Math.round(probs[i] * 100);
+      const startT = performance.now();
+      const dur = 950;
+      (function step(now){
+        const t = Math.min(1, (now - startT) / dur);
+        prob.textContent = Math.round(target * t) + '%';
+        if(t < 1) requestAnimationFrame(step);
+      })(performance.now());
+    });
+  }
+  function showFinal(){
+    if(!finalEl) return;
+    finalSta.textContent = '성균관대역';
+    finalEl.classList.add('show');
+  }
+  function resetUI(){
+    softmaxStarted = false;
+    barEls.forEach(b => {
+      b.querySelector('.fill').style.width = '0%';
+      b.querySelector('.prob').textContent = '0%';
+    });
+    if(finalEl){
+      finalEl.classList.remove('show');
+      finalSta.textContent = '─';
+    }
+  }
+
+  /* ============================================================
+   * Phase state machine
+   * STFT → HOLD → CNN → SOFTMAX → DONE (and stop)
+   * ============================================================ */
+  const PHASE = { STFT:0, HOLD:1, CNN:2, SOFTMAX:3, DONE:4 };
+  let phase = PHASE.STFT;
+  let phaseStart = 0;
+  let hopIdx = 0;
+  let filled = 0;
+  let nextHopAt = 0;
+  const HOP_MS  = 90;
+  const HOLD_MS = 650;
+  const CNN_MS  = 2600;
+  const SM_MS   = 1300;
+
+  let running = false;
+  let rafId = null;
+
+  function tick(ts){
+    if(!running){ rafId = null; return; }
+
+    // advance STFT hops
+    if(phase === PHASE.STFT){
+      if(!nextHopAt) nextHopAt = ts + HOP_MS;
+      if(ts >= nextHopAt){
+        filled = hopIdx + 1;
+        hopIdx++;
+        if(hopIdx >= N_HOPS){
+          hopIdx = N_HOPS - 1;
+          phase = PHASE.HOLD;
+          phaseStart = ts;
+        } else {
+          nextHopAt = ts + HOP_MS;
+        }
+      }
+      drawWave(hopIdx);
+      drawSpec(filled, hopIdx);
+      drawCnn(0);
+
+    } else if(phase === PHASE.HOLD){
+      drawWave(hopIdx);
+      drawSpec(filled, hopIdx);
+      drawCnn(0);
+      if(ts - phaseStart >= HOLD_MS){
+        phase = PHASE.CNN;
+        phaseStart = ts;
+      }
+
+    } else if(phase === PHASE.CNN){
+      drawWave(hopIdx);
+      drawSpec(filled, hopIdx);
+      const p = Math.min(1, (ts - phaseStart) / CNN_MS);
+      drawCnn(p);
+      if(p >= 1){
+        phase = PHASE.SOFTMAX;
+        phaseStart = ts;
+        startSoftmax();
+      }
+
+    } else if(phase === PHASE.SOFTMAX){
+      drawWave(hopIdx);
+      drawSpec(filled, hopIdx);
+      drawCnn(1);
+      if(ts - phaseStart >= SM_MS){
+        phase = PHASE.DONE;
+        phaseStart = ts;
+        showFinal();
+      }
+
+    } else if(phase === PHASE.DONE){
+      drawWave(hopIdx);
+      drawSpec(filled, hopIdx);
+      drawCnn(1);
+      // final paint then stop the loop
+      running = false;
+      rafId = null;
+      return;
+    }
+
     rafId = requestAnimationFrame(tick);
   }
 
-  // initial paint (static, before anim starts)
+  // initial static paint (so the slide isn't blank before first enter)
   drawWave(0);
   drawSpec(0, 0);
+  drawCnn(0);
 
   window.addEventListener('slide:enter', (e) => {
     const onSlide = e.detail.slide.dataset.slide === '5';
-    if(onSlide && !running){
+    if(onSlide){
+      // restart the whole pipeline every time the slide is entered
+      if(rafId) cancelAnimationFrame(rafId);
+      phase = PHASE.STFT;
+      hopIdx = 0; filled = 0; nextHopAt = 0; phaseStart = 0;
+      resetUI();
+      drawWave(0); drawSpec(0, 0); drawCnn(0);
       running = true;
-      hopIdx = 0;
-      filled = 0;
-      nextHopAt = 0;
       rafId = requestAnimationFrame(tick);
-    } else if(!onSlide && running){
+    } else if(running){
       running = false;
       if(rafId) cancelAnimationFrame(rafId);
       rafId = null;
