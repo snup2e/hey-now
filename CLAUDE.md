@@ -5,7 +5,9 @@
 ## 프로젝트 개요
 
 - **과목**: 임베디드시스템설계 (성균관대학교)
-- **프로젝트명**: 지하철 안내방송 기반 하차역 알림 시스템 (Subway Announcement Location Notifier)
+- **프로젝트명**: **Hey now!** — 지하철 안내방송 기반 하차역 알림 시스템 (Subway Announcement Location Notifier)
+- **제품 모델명**: Hey now!
+- **GitHub repo**: [snup2e/hey-now](https://github.com/snup2e/hey-now)
 - **목표**: GPS·WiFi가 닿지 않는 지하 환경에서, 차내 안내방송("이번 역은 ~~역입니다")을 TinyML로 인식해 사용자에게 현재 위치/하차역을 알림
 - **타겟 노선**: 서울 지하철 **1호선 일부 구간** (대상 역은 친구의 통근 경로 기반으로 추후 확정)
 - **기말 발표 데모 시나리오**:
