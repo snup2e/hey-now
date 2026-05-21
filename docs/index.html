@@ -528,6 +528,136 @@
     background:var(--primary);color:#fff;font-weight:700;cursor:pointer;
   }
 
+  /* Slide 3 illustration image */
+  .illu .photo{
+    width:100%;max-width:520px;height:auto;
+    border-radius:18px;
+    box-shadow:0 30px 60px -24px rgba(20,30,60,.45);
+    transform:translateZ(0);
+  }
+
+  /* ============================================================
+     Slide 5 (new): STFT process — waveform + sliding window + spectrogram
+     ============================================================ */
+  .stft{
+    flex:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:14px;
+    align-items:stretch;justify-items:center;
+  }
+  .stft-lead{font-size:1.4rem;font-weight:700;text-align:center;}
+  .stft-sub{font-size:1.02rem;color:var(--ink-soft);text-align:center;}
+  .stft-stage{
+    position:relative;width:min(960px,94%);
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .stft-row{
+    position:relative;background:#0c0c16;border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 18px 40px -22px rgba(20,30,60,.35);
+  }
+  .stft-row.wave{height:22vh;background:#f5f7fc;}
+  .stft-row.spec{height:32vh;}
+  .stft-row canvas{display:block;width:100%;height:100%;}
+  .stft-label{
+    position:absolute;left:14px;top:10px;
+    font-size:.78rem;font-weight:700;letter-spacing:.06em;
+    color:rgba(255,255,255,.85);
+    background:rgba(20,25,35,.65);
+    padding:4px 10px;border-radius:999px;
+    pointer-events:none;
+  }
+  .stft-row.wave .stft-label{color:var(--ink);background:#fff;border:1px solid var(--line);}
+  .stft-axis{
+    font-size:.7rem;color:rgba(255,255,255,.6);
+    position:absolute;right:14px;top:10px;font-weight:600;
+  }
+  .stft-row.wave .stft-axis{color:var(--ink-soft);}
+
+  .stft-step{
+    display:flex;justify-content:center;align-items:center;gap:10px;
+    font-weight:700;font-size:.95rem;color:var(--primary);
+    margin:2px 0;
+  }
+  .stft-step .pill{
+    background:linear-gradient(135deg, var(--primary), var(--primary-soft));
+    color:#fff;padding:5px 14px;border-radius:999px;
+    box-shadow:0 8px 18px -6px rgba(29,109,255,.55);
+    font-weight:800;letter-spacing:.04em;
+  }
+  .stft-step .arrow-v{color:var(--primary);font-size:1.1rem;}
+
+  .stft-legend{
+    display:flex;gap:18px;align-items:center;justify-content:center;
+    font-size:.85rem;color:var(--ink-soft);margin-top:4px;
+  }
+  .stft-legend .swatch{
+    width:14px;height:14px;border-radius:4px;
+  }
+  .stft-legend .swatch.win{background:rgba(29,109,255,.35);border:1.5px solid var(--primary);}
+  .stft-legend .swatch.scale{
+    width:140px;
+    background:linear-gradient(to right,#0c0c16,#3b1953,#9b1a4b,#e5563a,#f5b14f,#fff3c4);
+  }
+
+  /* ============================================================
+     Slide 6 (data): two cards + Seoul Metro screenshot
+     ============================================================ */
+  .data-row{
+    display:grid;grid-template-columns:1fr 1.15fr;gap:32px;flex:1;align-items:stretch;
+  }
+  .data-cards{display:flex;flex-direction:column;gap:18px;}
+  .data-cards .path-card{flex:1;padding:24px 26px;}
+  .data-cards .path-card h3{font-size:1.35rem;}
+  .data-cards .path-card p{font-size:.95rem;}
+  .archive-frame{
+    background:#fff;border:1.5px solid var(--line);border-radius:18px;
+    box-shadow:0 24px 50px -22px rgba(20,30,60,.3);
+    overflow:hidden;display:flex;flex-direction:column;
+  }
+  .archive-bar{
+    background:var(--surface);padding:8px 14px;display:flex;align-items:center;gap:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .archive-bar .dot{width:10px;height:10px;border-radius:50%;background:#e74c3c;}
+  .archive-bar .dot.y{background:#f1c40f;}
+  .archive-bar .dot.g{background:#2ecc71;}
+  .archive-bar .url{
+    margin-left:8px;font-size:.78rem;color:var(--ink-soft);
+    font-family:ui-monospace,'JetBrains Mono',monospace;
+    background:#fff;border:1px solid var(--line);
+    padding:3px 10px;border-radius:6px;flex:1;
+  }
+  .archive-frame img{
+    width:100%;height:100%;object-fit:cover;object-position:top center;
+    display:block;background:#fff;flex:1;
+  }
+
+  /* ============================================================
+     Slide 7 (new): hand-drawn architecture sketch + caption
+     ============================================================ */
+  .sketch-row{
+    display:grid;grid-template-columns:1.4fr 1fr;gap:36px;flex:1;align-items:stretch;
+  }
+  .sketch-host{
+    background:linear-gradient(180deg,#fbfbfd,#f1f3f7);
+    border-radius:22px;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;overflow:hidden;
+    box-shadow:0 24px 50px -28px rgba(20,30,60,.25);
+  }
+  .sketch-host img{max-width:100%;max-height:100%;object-fit:contain;}
+  .sketch-side{display:flex;flex-direction:column;justify-content:center;gap:18px;}
+  .sketch-side h3{
+    font-size:1.4rem;font-weight:800;letter-spacing:-.01em;
+    color:var(--primary);
+  }
+  .sketch-side p{font-size:1rem;line-height:1.7;color:var(--ink-soft);}
+  .sketch-side .note{
+    background:var(--surface);border-radius:14px;padding:16px 18px;
+    font-size:.92rem;color:var(--ink);line-height:1.65;
+    border-left:3px solid var(--primary);
+  }
+  .sketch-side .note strong{color:var(--primary-deep);font-weight:800;}
+
   /* Smaller screens fallback (projector usually 1080p anyway) */
   @media (max-width:1100px){
     .two-col, .arch-row, .data-col{grid-template-columns:1fr;gap:24px;}
@@ -549,7 +679,7 @@
     <dl>
       <dt>↓ / Space / PageDown</dt><dd>다음 슬라이드</dd>
       <dt>↑ / PageUp</dt><dd>이전 슬라이드</dd>
-      <dt>1 ~ 8</dt><dd>해당 슬라이드로 점프</dd>
+      <dt>1 ~ 9</dt><dd>해당 슬라이드로 점프</dd>
       <dt>Home / End</dt><dd>처음 / 마지막 슬라이드</dd>
       <dt>F</dt><dd>전체화면 토글</dd>
       <dt>마우스 휠</dt><dd>슬라이드 단위 스크롤</dd>
@@ -599,7 +729,7 @@
       <li class="anim d2" data-jump="3"><span class="idx">1.</span><span>기능 정의</span></li>
       <li class="anim d3" data-jump="4"><span class="idx">2.</span><span>구현 방법</span></li>
       <li class="anim d4" data-jump="7"><span class="idx">3.</span><span>시스템 아키텍쳐</span></li>
-      <li class="anim d5" data-jump="8"><span class="idx">4.</span><span>질의응답</span></li>
+      <li class="anim d5" data-jump="9"><span class="idx">4.</span><span>질의응답</span></li>
     </ol>
 
     <div class="page-num">02</div>
@@ -638,45 +768,7 @@
       </div>
 
       <div class="illu anim from-right d4">
-        <svg viewBox="0 0 520 480" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- ambient circles -->
-          <circle cx="260" cy="240" r="200" fill="#eaf1ff"/>
-          <circle cx="260" cy="240" r="150" fill="#dbe6ff"/>
-          <!-- subway window frame -->
-          <rect x="60" y="110" width="400" height="240" rx="20" fill="#fff" stroke="#cfd6e1" stroke-width="2"/>
-          <rect x="80" y="130" width="180" height="200" rx="8" fill="#0f1b2e"/>
-          <rect x="280" y="130" width="180" height="200" rx="8" fill="#0f1b2e"/>
-          <!-- speed lines outside window -->
-          <line x1="100" y1="160" x2="240" y2="160" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="100" y1="200" x2="220" y2="200" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="100" y1="240" x2="240" y2="240" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="100" y1="280" x2="200" y2="280" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="300" y1="180" x2="440" y2="180" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="300" y1="220" x2="430" y2="220" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="300" y1="260" x2="445" y2="260" stroke="#3a4a66" stroke-width="2"/>
-          <line x1="300" y1="300" x2="420" y2="300" stroke="#3a4a66" stroke-width="2"/>
-          <!-- LED sign -->
-          <rect x="170" y="60" width="180" height="40" rx="6" fill="#0f1b2e"/>
-          <text x="260" y="86" text-anchor="middle" font-family="Pretendard" font-size="16" font-weight="800" fill="#ff5a4d">서울S치과의원</text>
-          <!-- person head with headphones -->
-          <circle cx="260" cy="420" r="40" fill="#f4d8b9"/>
-          <path d="M220 410 Q220 360 260 360 Q300 360 300 410" stroke="#15171a" stroke-width="4" fill="none"/>
-          <rect x="218" y="400" width="14" height="22" rx="4" fill="#15171a"/>
-          <rect x="288" y="400" width="14" height="22" rx="4" fill="#15171a"/>
-          <!-- speech wave from speaker -->
-          <g transform="translate(388,150)">
-            <rect class="wave-bar" x="0"  y="-10" width="6" height="20" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="10" y="-16" width="6" height="32" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="20" y="-22" width="6" height="44" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="30" y="-18" width="6" height="36" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="40" y="-12" width="6" height="24" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="50" y="-20" width="6" height="40" rx="2" fill="#1d6dff"/>
-            <rect class="wave-bar" x="60" y="-8"  width="6" height="16" rx="2" fill="#1d6dff"/>
-          </g>
-          <!-- question mark over head -->
-          <circle cx="350" cy="370" r="20" fill="#ff5a4d"/>
-          <text x="350" y="378" text-anchor="middle" font-family="Pretendard" font-size="22" font-weight="900" fill="#fff">?</text>
-        </svg>
+        <img class="photo" src="img/persona.png" alt="이어폰을 끼고 안내방송을 놓치는 지하철 승객" loading="lazy">
       </div>
     </div>
 
@@ -715,21 +807,41 @@
     <div class="page-num">04</div>
   </section>
 
-  <!-- ============ 5. 구현방법 - Spectrogram ============ -->
-  <section class="slide" data-slide="5" data-label="구현방법 — 스펙트로그램">
+  <!-- ============ 5. 구현방법 - STFT ============ -->
+  <section class="slide" data-slide="5" data-label="구현방법 — STFT">
     <div class="s-head">
       <div class="s-num anim from-scale d1">02</div>
       <h2 class="s-title anim d2">구현방법</h2>
     </div>
 
-    <div class="spec-wrap">
-      <div class="spec-lead anim d3">2. Spectrogram 변환</div>
-      <div class="spec-sub anim d4">음성 데이터를 이미지로 변환해 CNN 입력으로 사용</div>
-      <canvas id="spec-canvas" class="anim d5" width="1280" height="560"></canvas>
-      <div class="spec-legend anim d6">
-        <span>-80 dB</span>
-        <span class="scale"></span>
-        <span>0 dB</span>
+    <div class="stft">
+      <div class="stft-lead anim d3">2. Spectrogram 변환 — STFT</div>
+      <div class="stft-sub anim d4">슬라이딩 윈도우 + FFT로 음성을 시간-주파수 이미지로 바꿔 CNN의 입력으로 사용</div>
+
+      <div class="stft-stage anim d5">
+        <div class="stft-row wave">
+          <span class="stft-label">① 시간 영역 신호 · waveform</span>
+          <span class="stft-axis">time →</span>
+          <canvas id="wave-canvas" width="1600" height="280"></canvas>
+        </div>
+
+        <div class="stft-step">
+          <span class="arrow-v">▼</span>
+          <span class="pill">② STFT · 슬라이딩 윈도우 × FFT</span>
+          <span class="arrow-v">▼</span>
+        </div>
+
+        <div class="stft-row spec">
+          <span class="stft-label">③ 주파수 × 시간 · spectrogram</span>
+          <span class="stft-axis">↑ freq</span>
+          <canvas id="spec-canvas" width="1600" height="500"></canvas>
+        </div>
+      </div>
+
+      <div class="stft-legend anim d6">
+        <span class="swatch win"></span><span>슬라이딩 윈도우 (Hann)</span>
+        <span style="margin-left:10px;"></span>
+        <span class="swatch scale"></span><span>magnitude (-80 dB → 0 dB)</span>
       </div>
     </div>
 
@@ -745,51 +857,82 @@
 
     <div class="kws-lead anim d3" style="margin-bottom:28px;">3. 데이터</div>
 
-    <div class="data-col">
-      <article class="path-card anim from-left d4">
-        <span class="ribbon">PATH 1</span>
-        <h4>SIMULATION ONLY</h4>
-        <h3>시뮬레이션만</h3>
-        <p>서울교통공사의 안내방송 음원으로 학습하고, 같은 음원으로 시연.</p>
-        <div>
-          <span class="tag">한국어 안내</span>
-          <span class="tag">Clean signal</span>
-        </div>
-        <div class="source">
-          <div>출처: 서울교통공사 자료실</div>
-          <div class="source-zip">1호선_안내방송.zip (65.89MB)</div>
-          <div class="source-zip">2호선_안내방송.zip (47.00MB)</div>
-          <div class="source-zip">3호선_안내방송.zip (50.23MB)</div>
-          <div class="source-zip">4호선_안내방송.zip (47.25MB)</div>
-        </div>
-      </article>
+    <div class="data-row">
+      <div class="data-cards">
+        <article class="path-card anim from-left d4">
+          <span class="ribbon">PATH 1</span>
+          <h4>SIMULATION ONLY</h4>
+          <h3>시뮬레이션만</h3>
+          <p>서울교통공사 안내방송 음원으로 학습하고, 같은 음원으로 시연.</p>
+          <div>
+            <span class="tag">한국어 안내</span>
+            <span class="tag">Clean signal</span>
+          </div>
+        </article>
 
-      <article class="path-card b anim from-right d5">
-        <span class="ribbon">PATH 2</span>
-        <h4>FIELD RECORDING</h4>
-        <h3>1호선 통학구간</h3>
-        <p>성균관대역 ~ N개 역에서 주변 노이즈가 포함된 음성을 수집해 학습 후, 실제 지하철 내 환경에서 시연 및 영상 제작.</p>
-        <div>
-          <span class="tag">자체 녹음</span>
-          <span class="tag">Noisy (in-car)</span>
-          <span class="tag">VVVF / 구형 차량</span>
+        <article class="path-card b anim from-left d5">
+          <span class="ribbon">PATH 2</span>
+          <h4>FIELD RECORDING</h4>
+          <h3>1호선 통학구간</h3>
+          <p>성균관대역 ~ N개 역에서 주변 노이즈가 포함된 음성을 수집해 학습 후, 실제 지하철 내 환경에서 시연 및 영상 제작.</p>
+          <div>
+            <span class="tag">자체 녹음</span>
+            <span class="tag">Noisy (in-car)</span>
+            <span class="tag">SNR -5 dB 목표</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="archive-frame anim from-right d4">
+        <div class="archive-bar">
+          <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">data.seoulmetro.co.kr — 자료실 · 1-4호선 열차 내 자동 안내방송 음원</span>
         </div>
-        <div class="source">
-          <div>장비: 스마트폰 + 외장 마이크</div>
-          <div>시간대: 혼잡 / 한산 분리 수집</div>
-          <div>목표: SNR -5 dB까지 동작</div>
-        </div>
-      </article>
+        <img src="img/seoul-archive.png" alt="서울교통공사 자료실 1-4호선 안내방송 음원 게시글" loading="lazy">
+      </div>
     </div>
 
     <div class="page-num">06</div>
   </section>
 
-  <!-- ============ 7. 시스템 아키텍쳐 (3D) ============ -->
-  <section class="slide" data-slide="7" data-label="시스템 아키텍쳐">
+  <!-- ============ 7. 시스템 아키텍쳐 - 손그림 개요 ============ -->
+  <section class="slide" data-slide="7" data-label="시스템 아키텍쳐 — 개요">
     <div class="s-head">
       <div class="s-num anim from-scale d1">03</div>
       <h2 class="s-title anim d2">시스템 아키텍쳐</h2>
+    </div>
+
+    <div class="sketch-row">
+      <div class="sketch-host anim from-left d3">
+        <img src="img/architecture-sketch.png" alt="시스템 아키텍쳐 손그림: 마이크 → KWS → CNN → main.c → Display" loading="lazy">
+      </div>
+
+      <div class="sketch-side">
+        <h3 class="anim d4">신호 흐름 한눈에 보기</h3>
+        <p class="anim d4">
+          차내 안내방송 <strong>"다음 역은 OO역입니다"</strong> 가 마이크로 들어오면,
+          STM32 보드 안에서 <strong>KWS → CNN → 상태 갱신 → 디스플레이</strong> 순으로 처리됩니다.
+        </p>
+        <div class="note anim d5">
+          <strong>KWS</strong> 는 "다음 역은?" 트리거만 골라내고,<br>
+          <strong>CNN</strong> 은 그 뒤따라오는 역 이름 구간만 분류해<br>
+          <code>previous_station</code> · <code>next_station</code> 두 상태를 갱신합니다.
+        </div>
+        <p class="anim d6" style="font-size:.92rem;color:var(--ink-soft);">
+          → 사용자는 디스플레이에서 "지난 역 / 다음 역" 을 직접 확인할 수 있어
+          이어폰을 끼거나 청각장애가 있어도 자기 위치를 놓치지 않습니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-num">07</div>
+  </section>
+
+  <!-- ============ 8. 시스템 아키텍쳐 - 3D 부품 모델 ============ -->
+  <section class="slide" data-slide="8" data-label="시스템 아키텍쳐 — 부품">
+    <div class="s-head">
+      <div class="s-num anim from-scale d1">03</div>
+      <h2 class="s-title anim d2">시스템 아키텍쳐 — 실제 부품</h2>
     </div>
 
     <div class="arch-row">
@@ -801,7 +944,7 @@
         <div class="node anim from-right d3">
           <div class="icon">🎤</div>
           <div>
-            <h5>INMP441 마이크</h5>
+            <h5>ICS43434 마이크</h5>
             <p>I2S 16 kHz · "다음 역은 OO역입니다" 수신</p>
           </div>
         </div>
@@ -831,20 +974,20 @@
         </div>
         <div class="arrow"></div>
         <div class="node anim from-right d7">
-          <div class="icon">📟</div>
+          <div class="icon">📺</div>
           <div>
-            <h5>OLED · 진동 알림</h5>
-            <p>지난 역 / 다음 역 표시 + 하차역 진동 경보</p>
+            <h5>2.0" LCD 디스플레이</h5>
+            <p>지난 역 / 다음 역을 큰 텍스트로 표시</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="page-num">07</div>
+    <div class="page-num">08</div>
   </section>
 
-  <!-- ============ 8. Q&A ============ -->
-  <section class="slide qa" data-slide="8" data-label="질의응답">
+  <!-- ============ 9. Q&A ============ -->
+  <section class="slide qa" data-slide="9" data-label="질의응답">
     <div class="qa-orbs">
       <span></span><span></span><span></span><span></span>
     </div>
@@ -855,7 +998,7 @@
       <span class="chip">👥 김건형 · 차현비</span>
       <span class="chip">🔗 <a href="https://github.com/snup2e/hey-now" target="_blank" rel="noopener">github.com/snup2e/hey-now</a></span>
     </div>
-    <div class="page-num">08</div>
+    <div class="page-num">09</div>
   </section>
 
 </main>
@@ -973,21 +1116,87 @@ document.getElementById('help-close').addEventListener('click', closeHelp);
 helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHelp(); });
 
 /* ============================================================
- * Spectrogram canvas (procedurally drawn, animates left-to-right)
+ * STFT animation — waveform + sliding window + synced spectrogram
+ * The same sliding window position drives both:
+ *   • a translucent box on the waveform (with Hann window shape)
+ *   • the next column being filled into the spectrogram
  * ============================================================ */
-(function spectrogram(){
-  const canvas = document.getElementById('spec-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cols = 240;
-  const colW = W / cols;
-  const rows = 80;
-  const rowH = H / rows;
+(function stft(){
+  const waveCanvas = document.getElementById('wave-canvas');
+  const specCanvas = document.getElementById('spec-canvas');
+  if(!waveCanvas || !specCanvas) return;
+  const wctx = waveCanvas.getContext('2d');
+  const sctx = specCanvas.getContext('2d');
+  const WW = waveCanvas.width, WH = waveCanvas.height;
+  const SW = specCanvas.width, SH = specCanvas.height;
 
-  // Color ramp similar to magma/inferno
+  // ----- Signal config -----
+  const SR  = 4000;         // virtual sample rate
+  const N   = 1024;         // total samples in the static signal
+  const WIN = 256;          // window length (samples)
+  const HOP = 32;           // hop length (samples)
+  const N_HOPS = Math.floor((N - WIN) / HOP) + 1;
+  const N_BINS = 72;        // we keep bins 0..N_BINS-1 (low → mid frequencies)
+
+  // ----- Build a speech-like static signal -----
+  const sig = new Float32Array(N);
+  for(let i = 0; i < N; i++){
+    const t = i / SR;
+    // 3 envelope blobs (mimics syllables)
+    const env =
+      0.95 * Math.exp(-Math.pow((t - 0.10) * 6.5, 2)) +
+      0.85 * Math.exp(-Math.pow((t - 0.45) * 5.8, 2)) +
+      1.00 * Math.exp(-Math.pow((t - 0.78) * 6.0, 2)) +
+      0.08;
+    // formants that drift a bit over time
+    const f1 = 260 + 70 * Math.sin(t * 5.0);
+    const f2 = 720 + 220 * Math.sin(t * 3.4 + 1);
+    const f3 = 1400 + 250 * Math.sin(t * 2.2);
+    sig[i] = env * (
+      Math.sin(2 * Math.PI * f1 * t) * 0.55 +
+      Math.sin(2 * Math.PI * f2 * t) * 0.32 +
+      Math.sin(2 * Math.PI * f3 * t) * 0.18 +
+      (Math.random() - 0.5) * 0.04
+    );
+  }
+  // normalize for plotting
+  let peak = 0;
+  for(let i = 0; i < N; i++) peak = Math.max(peak, Math.abs(sig[i]));
+  for(let i = 0; i < N; i++) sig[i] /= (peak || 1);
+
+  // Hann window (precomputed)
+  const hann = new Float32Array(WIN);
+  for(let n = 0; n < WIN; n++) hann[n] = 0.5 - 0.5 * Math.cos(2 * Math.PI * n / (WIN - 1));
+
+  // Precompute spectrogram in dB for all hops
+  function magnitudeAt(start){
+    const out = new Float32Array(N_BINS);
+    for(let k = 0; k < N_BINS; k++){
+      let re = 0, im = 0;
+      for(let n = 0; n < WIN; n++){
+        const x = sig[start + n] * hann[n];
+        const a = -2 * Math.PI * k * n / WIN;
+        re += x * Math.cos(a);
+        im += x * Math.sin(a);
+      }
+      out[k] = Math.sqrt(re * re + im * im) / WIN;
+    }
+    return out;
+  }
+  const specDB = new Float32Array(N_HOPS * N_BINS);
+  let dbMax = -Infinity;
+  for(let h = 0; h < N_HOPS; h++){
+    const m = magnitudeAt(h * HOP);
+    for(let k = 0; k < N_BINS; k++){
+      const db = 20 * Math.log10(m[k] + 1e-6);
+      specDB[h * N_BINS + k] = db;
+      if(db > dbMax) dbMax = db;
+    }
+  }
+  const RANGE = 60; // dB display range below dbMax
+
+  // ----- Color ramp (magma-ish) -----
   function colorFor(v){
-    // v in [0,1]
     const stops = [
       [0.00, [12, 12, 22]],
       [0.20, [59, 25, 83]],
@@ -996,89 +1205,145 @@ helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHel
       [0.85, [245, 177, 79]],
       [1.00, [255, 243, 196]],
     ];
-    for(let i=0;i<stops.length-1;i++){
-      const [a,A]=stops[i], [b,B]=stops[i+1];
+    for(let i = 0; i < stops.length - 1; i++){
+      const [a, A] = stops[i], [b, B] = stops[i + 1];
       if(v <= b){
         const t = (v - a) / (b - a);
-        const r = A[0] + (B[0]-A[0])*t;
-        const g = A[1] + (B[1]-A[1])*t;
-        const bl= A[2] + (B[2]-A[2])*t;
-        return `rgb(${r|0},${g|0},${bl|0})`;
+        return `rgb(${(A[0] + (B[0] - A[0]) * t) | 0},${(A[1] + (B[1] - A[1]) * t) | 0},${(A[2] + (B[2] - A[2]) * t) | 0})`;
       }
     }
     return 'rgb(255,243,196)';
   }
 
-  // Pre-compute base pattern (low freq energy + speech-like bands)
-  function valueAt(x, y, t){
-    // x: 0..1 (time scrolling), y: 0..1 (freq, top=high)
-    const freq = 1 - y;
-    // base low-frequency energy
-    let v = Math.exp(-freq * 3.2) * 0.85;
-    // moving speech blobs
-    const phase = x * 6 + t;
-    v += 0.45 * Math.exp(-Math.pow((freq - 0.18 - 0.05*Math.sin(phase)), 2) * 80) * (0.6 + 0.4*Math.sin(phase*1.7));
-    v += 0.35 * Math.exp(-Math.pow((freq - 0.32 - 0.04*Math.sin(phase*1.3)), 2) * 120) * (0.6 + 0.4*Math.sin(phase*0.9 + 1));
-    v += 0.25 * Math.exp(-Math.pow((freq - 0.55), 2) * 200) * (0.5 + 0.5*Math.sin(phase*2.1 + 0.7));
-    // small high-freq noise
-    v += 0.18 * Math.exp(-freq * 1.2) * (Math.sin(x*180 + y*40 + t*2) * 0.5 + 0.5);
-    // random noise
-    v += (Math.random() - 0.5) * 0.06;
-    return Math.max(0, Math.min(1, v));
+  // ----- Draw waveform with sliding window overlay -----
+  function drawWave(hopIdx){
+    wctx.clearRect(0, 0, WW, WH);
+
+    // midline
+    wctx.strokeStyle = '#e0e6f0';
+    wctx.lineWidth = 1;
+    wctx.beginPath();
+    wctx.moveTo(0, WH / 2);
+    wctx.lineTo(WW, WH / 2);
+    wctx.stroke();
+
+    // waveform path (full signal, static)
+    wctx.strokeStyle = '#1d6dff';
+    wctx.lineWidth = 2;
+    wctx.beginPath();
+    for(let i = 0; i < N; i++){
+      const x = (i / N) * WW;
+      const y = WH / 2 - sig[i] * WH * 0.42;
+      if(i === 0) wctx.moveTo(x, y);
+      else wctx.lineTo(x, y);
+    }
+    wctx.stroke();
+
+    // window rectangle
+    const winStart = hopIdx * HOP;
+    const xStart = (winStart / N) * WW;
+    const xEnd = ((winStart + WIN) / N) * WW;
+    wctx.fillStyle = 'rgba(29,109,255,0.18)';
+    wctx.fillRect(xStart, 0, xEnd - xStart, WH);
+    wctx.strokeStyle = '#1d6dff';
+    wctx.lineWidth = 2;
+    wctx.strokeRect(xStart + 1, 1, xEnd - xStart - 2, WH - 2);
+
+    // Hann window curve overlay (red), on top of the wave inside window
+    wctx.strokeStyle = '#ff5a4d';
+    wctx.lineWidth = 2.2;
+    wctx.beginPath();
+    for(let n = 0; n < WIN; n++){
+      const xRel = n / (WIN - 1);
+      const x = xStart + xRel * (xEnd - xStart);
+      // map hann[n] (0..1) to a curve sitting inside window
+      const y = WH * 0.92 - hann[n] * WH * 0.78;
+      if(n === 0) wctx.moveTo(x, y);
+      else wctx.lineTo(x, y);
+    }
+    wctx.stroke();
   }
 
-  let t = 0;
+  // ----- Draw spectrogram filled up to hopIdx, with current column highlighted -----
+  function drawSpec(filledHops, hopIdx){
+    sctx.fillStyle = '#0c0c16';
+    sctx.fillRect(0, 0, SW, SH);
+
+    const colW = SW / N_HOPS;
+    const rowH = SH / N_BINS;
+
+    for(let h = 0; h < filledHops; h++){
+      const base = h * N_BINS;
+      const x = h * colW;
+      for(let k = 0; k < N_BINS; k++){
+        const db = specDB[base + k];
+        let v = (db - (dbMax - RANGE)) / RANGE;
+        v = v < 0 ? 0 : (v > 1 ? 1 : v);
+        sctx.fillStyle = colorFor(v);
+        // bottom = low freq, top = high freq
+        const y = SH - (k + 1) * rowH;
+        sctx.fillRect(x, y, colW + 0.6, rowH + 0.6);
+      }
+    }
+
+    // highlight current column being processed
+    if(hopIdx >= 0 && hopIdx < N_HOPS){
+      const x = hopIdx * colW;
+      sctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      sctx.lineWidth = 2;
+      sctx.strokeRect(x + 1, 1, colW - 2, SH - 2);
+    }
+  }
+
+  // ----- Animation loop -----
+  let running = false;
   let rafId = null;
-  let isVisible = false;
-  let lastTs = 0;
+  let hopIdx = 0;        // window position
+  let filled = 0;        // how many columns of spec drawn so far
+  let nextHopAt = 0;     // ms time to advance
+  const HOP_MS = 90;     // ms between hops
+  const HOLD_MS = 1300;  // pause at the end of a cycle
 
-  function frame(ts){
-    if(!isVisible){ rafId = null; return; }
-    const dt = lastTs ? (ts - lastTs) / 1000 : 0.016;
-    lastTs = ts;
-    t += dt * 0.9;
+  function tick(ts){
+    if(!running){ rafId = null; return; }
+    if(!nextHopAt) nextHopAt = ts + HOP_MS;
 
-    // shift previous frame left for scrolling effect
-    const shift = Math.max(1, Math.floor(colW * 1.4));
-    const img = ctx.getImageData(shift, 0, W - shift, H);
-    ctx.putImageData(img, 0, 0);
-    ctx.clearRect(W - shift, 0, shift, H);
-
-    // draw new columns on the right
-    for(let cx = W - shift; cx < W; cx += colW){
-      const xN = cx / W;
-      for(let r = 0; r < rows; r++){
-        const yN = r / rows;
-        const v = valueAt(xN, yN, t);
-        ctx.fillStyle = colorFor(v);
-        ctx.fillRect(cx, r * rowH, colW + 0.5, rowH + 0.5);
+    if(ts >= nextHopAt){
+      filled = hopIdx + 1;
+      hopIdx++;
+      if(hopIdx >= N_HOPS){
+        nextHopAt = ts + HOP_MS + HOLD_MS;
+        // schedule reset after this draw
+        setTimeout(() => {
+          hopIdx = 0;
+          filled = 0;
+          nextHopAt = performance.now() + HOP_MS;
+        }, HOLD_MS);
+        hopIdx = N_HOPS - 1; // hold last position visually
+      } else {
+        nextHopAt = ts + HOP_MS;
       }
     }
 
-    rafId = requestAnimationFrame(frame);
+    drawWave(hopIdx);
+    drawSpec(filled, hopIdx);
+    rafId = requestAnimationFrame(tick);
   }
 
-  function paintFull(){
-    for(let cx = 0; cx < W; cx += colW){
-      const xN = cx / W;
-      for(let r = 0; r < rows; r++){
-        const yN = r / rows;
-        const v = valueAt(xN, yN, t);
-        ctx.fillStyle = colorFor(v);
-        ctx.fillRect(cx, r * rowH, colW + 0.5, rowH + 0.5);
-      }
-    }
-  }
-  paintFull();
+  // initial paint (static, before anim starts)
+  drawWave(0);
+  drawSpec(0, 0);
 
   window.addEventListener('slide:enter', (e) => {
-    const onSpec = (e.detail.slide.dataset.slide === '5');
-    if(onSpec && !isVisible){
-      isVisible = true;
-      lastTs = 0;
-      rafId = requestAnimationFrame(frame);
-    } else if(!onSpec && isVisible){
-      isVisible = false;
+    const onSlide = e.detail.slide.dataset.slide === '5';
+    if(onSlide && !running){
+      running = true;
+      hopIdx = 0;
+      filled = 0;
+      nextHopAt = 0;
+      rafId = requestAnimationFrame(tick);
+    } else if(!onSlide && running){
+      running = false;
       if(rafId) cancelAnimationFrame(rafId);
       rafId = null;
     }
@@ -1086,7 +1351,11 @@ helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHel
 })();
 
 /* ============================================================
- * Three.js — STM32 + INMP441 board model on slide 7
+ * Three.js — STM32 F411RE Nucleo + ICS43434 mic + 2.0" LCD on slide 8
+ * Modelled to roughly resemble the actual boards:
+ *   • White Nucleo PCB with mini-USB, blue reset, black IC, morpho headers
+ *   • Black ICS43434 breakout with small mic can
+ *   • Red 2.0" SPI LCD board with black display panel
  * ============================================================ */
 import * as THREE from 'three';
 
@@ -1101,12 +1370,12 @@ import * as THREE from 'three';
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   host.appendChild(renderer.domElement);
 
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(4.8, 3.6, 5.6);
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.position.set(5.5, 4.2, 6.2);
   camera.lookAt(0, 0, 0);
 
   // Lighting
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xc0c8d8, 0.85));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xc0c8d8, 0.9));
   const key = new THREE.DirectionalLight(0xffffff, 1.0);
   key.position.set(5, 8, 4);
   scene.add(key);
@@ -1118,154 +1387,15 @@ import * as THREE from 'three';
   const group = new THREE.Group();
   scene.add(group);
 
-  // PCB board (Nucleo green-ish)
-  const pcb = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, 0.18, 2.8),
-    new THREE.MeshStandardMaterial({color:0x1a6b3a, roughness:0.55, metalness:0.15})
-  );
-  group.add(pcb);
-
-  // Silkscreen lines on PCB (a thin lighter strip)
-  const silk = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, 0.005, 0.05),
-    new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.9})
-  );
-  silk.position.set(0, 0.095, -1.1);
-  group.add(silk);
-
-  // STM32 chip (black square IC)
-  const chip = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 0.18, 0.9),
-    new THREE.MeshStandardMaterial({color:0x111317, roughness:0.45, metalness:0.4})
-  );
-  chip.position.set(-0.4, 0.18, 0.1);
-  group.add(chip);
-  // chip label (white text approximation)
-  const chipLabel = makeLabel('STM32 F411RE', '#ffffff', '#111317', 256, 64);
-  chipLabel.position.set(-0.4, 0.28, 0.1);
-  chipLabel.rotation.x = -Math.PI / 2;
-  chipLabel.scale.set(0.8, 0.2, 1);
-  group.add(chipLabel);
-
-  // ST-LINK USB / programming header (left end)
-  const usb = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 0.4, 0.8),
-    new THREE.MeshStandardMaterial({color:0xb8c0c8, roughness:0.35, metalness:0.85})
-  );
-  usb.position.set(-2.2, 0.29, 0);
-  group.add(usb);
-
-  // Header pins (two rows along long sides)
-  const pinMat = new THREE.MeshStandardMaterial({color:0x222328, roughness:0.5, metalness:0.5});
-  for(let i = -1.9; i <= 1.9; i += 0.16){
-    const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.18,0.08), pinMat);
-    p1.position.set(i, 0.18, 1.32);
-    group.add(p1);
-    const p2 = p1.clone();
-    p2.position.z = -1.32;
-    group.add(p2);
-  }
-
-  // Reset button (blue)
-  const btn = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.16, 0.18, 24),
-    new THREE.MeshStandardMaterial({color:0x1d6dff, roughness:0.4, metalness:0.2})
-  );
-  btn.position.set(-1.55, 0.18, 0.9);
-  group.add(btn);
-
-  // User LED (green)
-  const led = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 0.08, 16),
-    new THREE.MeshStandardMaterial({color:0x39ff7e, emissive:0x21c45f, emissiveIntensity:1.2, roughness:0.3})
-  );
-  led.position.set(-1.55, 0.13, -0.9);
-  group.add(led);
-
-  // INMP441 mic breakout (small purple/blue PCB above)
-  const micPcb = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 0.08, 0.5),
-    new THREE.MeshStandardMaterial({color:0x2b1750, roughness:0.55, metalness:0.1})
-  );
-  micPcb.position.set(1.4, 0.5, 0.6);
-  group.add(micPcb);
-  const micCan = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 0.18, 24),
-    new THREE.MeshStandardMaterial({color:0xd6d9df, roughness:0.45, metalness:0.7})
-  );
-  micCan.position.set(1.4, 0.6, 0.6);
-  group.add(micCan);
-  // small port hole on top of mic
-  const micHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.04, 0.04, 0.02, 16),
-    new THREE.MeshStandardMaterial({color:0x111317})
-  );
-  micHole.position.set(1.4, 0.7, 0.6);
-  group.add(micHole);
-  const micLabel = makeLabel('INMP441', '#ffffff', '#2b1750', 256, 64);
-  micLabel.position.set(1.4, 0.545, 0.86);
-  micLabel.rotation.x = -Math.PI / 2;
-  micLabel.scale.set(0.55, 0.14, 1);
-  group.add(micLabel);
-
-  // OLED display (small black rect with cyan glow)
-  const oled = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 0.08, 0.6),
-    new THREE.MeshStandardMaterial({color:0x05060a, roughness:0.3, metalness:0.2})
-  );
-  oled.position.set(1.0, 0.5, -0.7);
-  group.add(oled);
-  const oledScr = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.82, 0.42),
-    new THREE.MeshBasicMaterial({color:0x66ccff})
-  );
-  oledScr.position.set(1.0, 0.545, -0.7);
-  oledScr.rotation.x = -Math.PI / 2;
-  group.add(oledScr);
-  const oledTxt = makeLabel('NEXT: 성균관대', '#ffffff', '#001f33', 512, 128);
-  oledTxt.position.set(1.0, 0.546, -0.7);
-  oledTxt.rotation.x = -Math.PI / 2;
-  oledTxt.scale.set(0.78, 0.4, 1);
-  group.add(oledTxt);
-
-  // Vibration motor (small coin)
-  const vibe = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.18, 0.08, 24),
-    new THREE.MeshStandardMaterial({color:0x9aa3b2, roughness:0.4, metalness:0.7})
-  );
-  vibe.position.set(0.0, 0.14, -0.95);
-  group.add(vibe);
-
-  // Wires (curved lines from mic to chip, chip to oled, chip to vibe)
-  function makeWire(from, to, color){
-    const mid = new THREE.Vector3((from.x+to.x)/2, Math.max(from.y, to.y) + 0.45, (from.z+to.z)/2);
-    const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
-    const geom = new THREE.TubeGeometry(curve, 32, 0.025, 8, false);
-    const mat = new THREE.MeshStandardMaterial({color, roughness:0.5});
-    return new THREE.Mesh(geom, mat);
-  }
-  group.add(makeWire(new THREE.Vector3(1.4, 0.5, 0.6),  new THREE.Vector3(-0.1, 0.27, 0.1), 0xff5a4d));   // mic → chip
-  group.add(makeWire(new THREE.Vector3(-0.4, 0.27, 0.1), new THREE.Vector3(1.0, 0.5, -0.7), 0x1d6dff));  // chip → oled
-  group.add(makeWire(new THREE.Vector3(-0.4, 0.27, 0.1), new THREE.Vector3(0.0, 0.18, -0.95), 0xfbc02d)); // chip → vibe
-
-  // Soft ground shadow plane (subtle)
-  const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(3.5, 32),
-    new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.08})
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = -0.1;
-  scene.add(shadow);
-
   // Helper: text label as canvas texture
-  function makeLabel(text, color, bg, w=256, h=64){
+  function makeLabel(text, color, bg, w=256, h=64, weight='bold'){
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const cx = c.getContext('2d');
     cx.fillStyle = bg;
     cx.fillRect(0,0,w,h);
     cx.fillStyle = color;
-    cx.font = `bold ${Math.floor(h*0.6)}px Pretendard, Arial, sans-serif`;
+    cx.font = `${weight} ${Math.floor(h*0.6)}px Pretendard, Arial, sans-serif`;
     cx.textAlign = 'center'; cx.textBaseline = 'middle';
     cx.fillText(text, w/2, h/2 + 2);
     const tex = new THREE.CanvasTexture(c);
@@ -1276,7 +1406,233 @@ import * as THREE from 'three';
     );
   }
 
-  // Resize handling
+  /* =============== STM32 F411RE Nucleo board =============== */
+  const stm = new THREE.Group();
+  // white PCB (Nucleo is off-white)
+  const pcb = new THREE.Mesh(
+    new THREE.BoxGeometry(4.0, 0.16, 2.6),
+    new THREE.MeshStandardMaterial({color:0xf2f4f8, roughness:0.6, metalness:0.05})
+  );
+  stm.add(pcb);
+
+  // Silkscreen separator between ST-LINK area (top) and target MCU area (bottom)
+  const silk = new THREE.Mesh(
+    new THREE.BoxGeometry(4.0, 0.005, 0.04),
+    new THREE.MeshStandardMaterial({color:0x9aa3b2, roughness:0.9})
+  );
+  silk.position.set(0, 0.085, 0.5);
+  stm.add(silk);
+
+  // ST logo text on bottom edge
+  const stLogo = makeLabel('ST  ·  www.st.com/stm32nucleo', '#1f4eb0', '#f2f4f8', 512, 64, 'bold');
+  stLogo.position.set(0, 0.083, -1.05);
+  stLogo.rotation.x = -Math.PI / 2;
+  stLogo.scale.set(2.4, 0.3, 1);
+  stm.add(stLogo);
+
+  // STM32 main IC (LQFP)
+  const chip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 0.14, 0.9),
+    new THREE.MeshStandardMaterial({color:0x16181c, roughness:0.5, metalness:0.35})
+  );
+  chip.position.set(-0.4, 0.15, -0.2);
+  stm.add(chip);
+  const chipTxt = makeLabel('STM32 F411RE', '#cfd6e1', '#16181c', 256, 64);
+  chipTxt.position.set(-0.4, 0.225, -0.2);
+  chipTxt.rotation.x = -Math.PI / 2;
+  chipTxt.scale.set(0.78, 0.19, 1);
+  stm.add(chipTxt);
+
+  // mini-USB connector (top-right, metal shell)
+  const usb = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.35, 0.7),
+    new THREE.MeshStandardMaterial({color:0xb8c0c8, roughness:0.3, metalness:0.9})
+  );
+  usb.position.set(1.85, 0.255, 0.95);
+  stm.add(usb);
+  // brown plastic inside USB
+  const usbIn = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.18, 0.18),
+    new THREE.MeshStandardMaterial({color:0x8a5a2b, roughness:0.7})
+  );
+  usbIn.position.set(1.85, 0.255, 1.22);
+  stm.add(usbIn);
+
+  // ST-LINK IC (small black square on top half)
+  const linkIc = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.1, 0.42),
+    new THREE.MeshStandardMaterial({color:0x16181c, roughness:0.5})
+  );
+  linkIc.position.set(0.6, 0.13, 1.0);
+  stm.add(linkIc);
+
+  // Blue user button (B1)
+  const btn = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.15, 0.15, 0.22, 24),
+    new THREE.MeshStandardMaterial({color:0x1d6dff, roughness:0.4})
+  );
+  btn.position.set(-0.4, 0.19, 0.95);
+  stm.add(btn);
+  // black square base of button
+  const btnBase = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 0.1, 0.32),
+    new THREE.MeshStandardMaterial({color:0x222328, roughness:0.5})
+  );
+  btnBase.position.set(-0.4, 0.13, 0.95);
+  stm.add(btnBase);
+
+  // Black reset button on the ST-LINK side
+  const rst = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.18, 0.22),
+    new THREE.MeshStandardMaterial({color:0x16181c, roughness:0.5})
+  );
+  rst.position.set(0.25, 0.17, 0.95);
+  stm.add(rst);
+
+  // User LED (green, pulses)
+  const led = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, 0.08, 16),
+    new THREE.MeshStandardMaterial({color:0x39ff7e, emissive:0x21c45f, emissiveIntensity:1.2, roughness:0.3})
+  );
+  led.rotation.x = Math.PI/2;
+  led.position.set(-0.4, 0.12, 0.55);
+  stm.add(led);
+
+  // Morpho headers (long black sockets along both long sides)
+  const morphoMat = new THREE.MeshStandardMaterial({color:0x1d1f24, roughness:0.7});
+  const morphoL = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.32, 0.22), morphoMat);
+  morphoL.position.set(0, 0.24, -1.2);
+  stm.add(morphoL);
+  const morphoR = morphoL.clone();
+  morphoR.position.set(0, 0.24, 1.2);
+  // hide morpho on top side where USB sits; just leave it as-is, looks fine
+  stm.add(morphoR);
+
+  // Tiny gold pin highlights on top of morpho headers
+  const pinMat = new THREE.MeshStandardMaterial({color:0xd9b169, roughness:0.4, metalness:0.85});
+  for(let x = -1.55; x <= 1.55; x += 0.16){
+    const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.05), pinMat);
+    p1.position.set(x, 0.41, -1.2);
+    stm.add(p1);
+    const p2 = p1.clone();
+    p2.position.z = 1.2;
+    stm.add(p2);
+  }
+
+  group.add(stm);
+
+  /* =============== ICS43434 microphone breakout =============== */
+  const mic = new THREE.Group();
+  const micPcb = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 0.08, 1.05),
+    new THREE.MeshStandardMaterial({color:0x101218, roughness:0.55})
+  );
+  mic.add(micPcb);
+  // small mic chip (white square package)
+  const micChip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.05, 0.18),
+    new THREE.MeshStandardMaterial({color:0xeaeaea, roughness:0.4})
+  );
+  micChip.position.set(0, 0.07, 0.15);
+  mic.add(micChip);
+  // mic hole
+  const micHole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16),
+    new THREE.MeshStandardMaterial({color:0x05060a})
+  );
+  micHole.position.set(0, 0.1, 0.15);
+  mic.add(micHole);
+  // ICS43434 label
+  const micLabel = makeLabel('ICS 43434', '#ffffff', '#101218', 256, 64);
+  micLabel.position.set(0, 0.045, -0.05);
+  micLabel.rotation.x = -Math.PI / 2;
+  micLabel.scale.set(0.46, 0.11, 1);
+  mic.add(micLabel);
+  // small pin holes silk (left side circles)
+  const pinHoleMat = new THREE.MeshStandardMaterial({color:0xd9b169, roughness:0.4, metalness:0.8});
+  for(let dz of [-0.32, -0.18, -0.04, 0.10, 0.24]){
+    const h = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.09, 16), pinHoleMat);
+    h.position.set(0.36, 0.045, dz);
+    mic.add(h);
+  }
+  // place mic at top-left area
+  mic.position.set(-2.8, 0.55, -0.4);
+  mic.rotation.y = 0.35;
+  group.add(mic);
+
+  /* =============== 2.0" LCD display (red PCB + dark panel) =============== */
+  const lcd = new THREE.Group();
+  const lcdPcb = new THREE.Mesh(
+    new THREE.BoxGeometry(2.3, 0.08, 1.6),
+    new THREE.MeshStandardMaterial({color:0xc8202a, roughness:0.6})
+  );
+  lcd.add(lcdPcb);
+  // black LCD panel inset
+  const lcdPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(1.95, 0.04, 1.35),
+    new THREE.MeshStandardMaterial({color:0x0a0b0f, roughness:0.4})
+  );
+  lcdPanel.position.set(0.05, 0.06, 0);
+  lcd.add(lcdPanel);
+  // active display area (lit, shows station info)
+  const lcdScr = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.75, 1.18),
+    new THREE.MeshBasicMaterial({color:0xffffff})
+  );
+  lcdScr.position.set(0.05, 0.08, 0);
+  lcdScr.rotation.x = -Math.PI / 2;
+  lcd.add(lcdScr);
+  // station info text on screen
+  const lcdTxt = makeLabel('NEXT  ·  성균관대', '#15171a', '#ffffff', 512, 128);
+  lcdTxt.position.set(0.05, 0.081, 0);
+  lcdTxt.rotation.x = -Math.PI / 2;
+  lcdTxt.scale.set(1.6, 0.4, 1);
+  lcd.add(lcdTxt);
+  // header pins (one row, top of board)
+  for(let x = -1.0; x <= 1.0; x += 0.13){
+    const p = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.18, 0.06),
+      new THREE.MeshStandardMaterial({color:0x16181c, roughness:0.6})
+    );
+    p.position.set(x, 0.13, -0.72);
+    lcd.add(p);
+  }
+  // place LCD on the right
+  lcd.position.set(2.9, 0.55, -0.2);
+  lcd.rotation.y = -0.25;
+  group.add(lcd);
+
+  /* =============== Connecting wires =============== */
+  function makeWire(from, to, color){
+    const mid = new THREE.Vector3((from.x+to.x)/2, Math.max(from.y, to.y) + 0.55, (from.z+to.z)/2);
+    const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
+    const geom = new THREE.TubeGeometry(curve, 32, 0.028, 8, false);
+    const mat = new THREE.MeshStandardMaterial({color, roughness:0.5});
+    return new THREE.Mesh(geom, mat);
+  }
+  // mic → STM32
+  group.add(makeWire(
+    new THREE.Vector3(-2.4, 0.55, -0.4),
+    new THREE.Vector3(-0.85, 0.27, -0.2),
+    0xff5a4d
+  ));
+  // STM32 → LCD
+  group.add(makeWire(
+    new THREE.Vector3( 0.05, 0.27, -0.2),
+    new THREE.Vector3( 2.5,  0.55, -0.2),
+    0x1d6dff
+  ));
+
+  /* =============== Soft ground shadow =============== */
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(4.2, 32),
+    new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.10})
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = -0.1;
+  scene.add(shadow);
+
+  /* =============== Resize handling =============== */
   function resize(){
     const w = host.clientWidth;
     const h = host.clientHeight;
@@ -1288,13 +1644,13 @@ import * as THREE from 'three';
   resize();
   new ResizeObserver(resize).observe(host);
 
-  // Drag-to-rotate
+  /* =============== Drag-to-rotate + wheel zoom =============== */
   let dragging = false;
   let lastX = 0, lastY = 0;
-  let yaw = -0.4, pitch = 0.4;
+  let yaw = -0.4, pitch = 0.45;
   let autoRotate = true;
-  let radius = 7.2;
-  let targetRadius = 7.2;
+  let radius = 8.5;
+  let targetRadius = 8.5;
 
   host.addEventListener('pointerdown', (e) => {
     dragging = true; autoRotate = false;
@@ -1315,34 +1671,31 @@ import * as THREE from 'three';
   });
   host.addEventListener('pointerleave', () => { dragging = false; });
   host.addEventListener('wheel', (e) => {
-    // only zoom when slide 7 is in view; otherwise let deck handle scroll
-    const onArch = document.querySelector('.slide[data-slide="7"].active');
+    const onArch = document.querySelector('.slide[data-slide="8"].active');
     if(!onArch) return;
     e.preventDefault();
-    targetRadius = Math.max(4.5, Math.min(11, targetRadius + e.deltaY * 0.005));
+    targetRadius = Math.max(5.0, Math.min(13, targetRadius + e.deltaY * 0.006));
   }, {passive:false});
 
-  // Animation loop
+  /* =============== Animation loop =============== */
   let running = false;
   function animate(){
     if(!running) return;
-    if(autoRotate) yaw += 0.005;
+    if(autoRotate) yaw += 0.0045;
     radius += (targetRadius - radius) * 0.1;
     const cy = Math.cos(pitch) * radius;
     const sy = Math.sin(pitch) * radius;
     camera.position.set(Math.sin(yaw)*cy, sy, Math.cos(yaw)*cy);
     camera.lookAt(0, 0.2, 0);
-    // pulse LED + OLED screen tint
     const t = performance.now() * 0.003;
-    led.material.emissiveIntensity = 0.8 + Math.sin(t*2) * 0.4;
-    oledScr.material.color.setHSL(0.55, 0.7, 0.45 + Math.sin(t)*0.05);
+    led.material.emissiveIntensity = 0.7 + Math.sin(t*2) * 0.45;
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
-  // Only render when slide 7 is in view (save CPU/GPU)
+  // Only render when slide 8 is in view
   window.addEventListener('slide:enter', (e) => {
-    const onArch = e.detail.slide.dataset.slide === '7';
+    const onArch = e.detail.slide.dataset.slide === '8';
     if(onArch && !running){
       running = true;
       requestAnimationFrame(animate);
