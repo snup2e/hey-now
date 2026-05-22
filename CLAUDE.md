@@ -9,11 +9,15 @@
 - **제품 모델명**: Hey now!
 - **GitHub repo**: [snup2e/hey-now](https://github.com/snup2e/hey-now)
 - **목표**: GPS·WiFi가 닿지 않는 지하 환경에서, 차내 안내방송("이번 역은 ~~역입니다")을 TinyML로 인식해 사용자에게 현재 위치/하차역을 알림
-- **타겟 노선**: 서울 지하철 **1호선 일부 구간** (대상 역은 친구의 통근 경로 기반으로 추후 확정)
-- **기말 발표 데모 시나리오**:
-  1. 보드에 1호선 안내방송 음원을 재생 → 보드가 현재 역을 인식해 OLED/진동/LED로 표시
-  2. 실제 1호선 차내에서 녹음한 잡음 포함 음성으로 강건성 시연
-  3. 사용자가 등록한 "하차 예정역" 도착 직전 진동 알림
+- **타겟 노선/구간**: 서울 지하철 **1호선 성균관대 → 신도림** (14역, 친구 통학 경로 기반)
+
+### 2-Path 진행 전략
+
+- **Path 1 (시뮬레이션)** — *현재 단계*. 마이크 없이, STM32 보드 Flash에 저장한
+  안내방송 음원을 모델에 직접 흘려보내 "지난 역 / 현재 역"을 디스플레이에 표시.
+  서울교통공사 공식 음원으로 학습하고 같은 음원으로 시연.
+- **Path 2 (실차)** — 1호선 통학 구간에서 잡음 포함 음성을 자체 녹음해 학습,
+  실제 차내 환경에서 시연 및 영상 제작.
 
 ## 페르소나 & 문제 정의
 
@@ -30,169 +34,140 @@
 
 | 부품 | 모델 | 비고 |
 |---|---|---|
-| MCU | STM32 F411RE Nucleo | Cortex-M4 @ 100MHz, 512KB Flash, 128KB SRAM, FPU 있음, **DAC 없음** |
-| 마이크 | INMP441 (I2S MEMS) | I2S2 버스 연결 |
-| 오디오 출력 | MAX98357A (I2S DAC + Class-D Amp) | 보유 중. 본 프로젝트에서 활용 여부 TBD (백업·비상 알람용) |
+| MCU | STM32 F411RE Nucleo | Cortex-M4 @ 100MHz, 512KB Flash, 128KB SRAM, FPU 있음 |
+| 마이크 | ICS43434 (I2S MEMS) | **Path 1에서는 미사용** — 보드 저장 음원을 직접 처리. Path 2에서 사용 |
+| 출력 디스플레이 | 2.0" SPI LCD | "지난 역 / 현재 역" 표시. 패널 모델 확정 전까지 펌웨어는 UART(시리얼) 출력으로 대체 |
+| 오디오 출력 | MAX98357A (I2S DAC + Class-D Amp) | 보유 중. 활용 여부 TBD (백업·비상 알람용) |
 | 스피커 | 4Ω 3W 40mm 라운드 | MAX98357A 직결 |
-| **출력 디바이스 (TBD)** | OLED 0.96" SSD1306 후보 | 역 이름 텍스트 표시용. 발주 필요 |
-| **알림 디바이스 (TBD)** | 코인형 진동모터 후보 | 하차역 도착 알림용. 발주 필요 |
 
 구매처: 가치창조기술 (vctec.co.kr)
-
-> **출력 방식 결정 필요**: OLED(가독성) vs 진동(은밀성) vs 둘 다.
 
 ## 소프트웨어 스택
 
 - **모델 학습**: Python + TensorFlow + Keras + librosa (Google Colab)
-- **모델 변환**: TensorFlow Lite (int8 양자화)
+- **모델 변환**: TensorFlow Lite (INT8 양자화)
+- **로컬 검증**: librosa + ai-edge-litert (노트북 PC, Python 3.13)
 - **펌웨어 IDE**: STM32CubeIDE
 - **AI 추론**: X-CUBE-AI 플러그인 (.tflite → C 코드 자동 생성)
-- **신호처리**: CMSIS-DSP (MFCC 추출, VAD)
+- **신호처리**: CMSIS-DSP (log-mel spectrogram FFT)
 
 ## 데이터셋 전략
 
-### 1. Seoul Metro 공개 음원 (Clean Reference)
-- 서울교통공사 공개 안내방송 음원 활용
-- 각 역의 표준 안내방송 (한국어/영어/중국어/일본어 4언어)
-- **본 프로젝트는 한국어 안내 구간만 사용**
-- 학습 데이터의 베이스라인 (clean signal)
+### 1. Seoul Metro 공개 음원 (Path 1)
+- 서울교통공사 공개 안내방송 음원 — 1호선 역별 mp3
+- 각 음원은 **한국어 안내 + 영어 안내** 순서로 구성 (역 이름이 한국어 구간에서 2회 반복)
+- 한/영 경계를 무음만으로 정확히 가르기 어려워, **음원 전체를 해당 역 데이터로 사용**
+- 일반역은 "이번 역은" 0~1.5s / 역 이름 1.5~5.0s, 환승역은 앞에 다른 안내가 붙어
+  "이번 역은"이 ~4s에 시작 (무음 검출로 자동 분할)
 
-### 2. 1호선 차내 자체 녹음 (Noisy Field Data)
+### 2. 1호선 차내 자체 녹음 (Path 2)
 - 팀원/협력자가 1호선 실제 탑승 중 스마트폰 녹음
 - 통근 시간대(혼잡) + 한산한 시간대 분리 수집
-- 신형(VVVF)/구형 차량 가능한 만큼 다양화
-- 출입문 개폐, 승객 잡담, 휴대전화 소리 등 자연 잡음 포함
+- 출입문 개폐, 승객 잡담 등 자연 잡음 포함
 
 ### 3. 데이터 증강
-- Seoul Metro clean 음원 + 자체 녹음 잡음 트랙 합성 (다양한 SNR로 mix)
+- 볼륨 변화, 가우시안 노이즈 (SNR 0~25dB), 시간 시프트
 - SpecAugment (시간/주파수 마스킹)
-- 가벼운 피치 시프트 / 시간 스트레치
-- 목표: SNR -5 dB까지 동작
+- 윈도우당 8~30배 증강 (역당 음원이 1~수 개뿐이라 필수)
 
 ### 4. 라이선스 & 커밋 정책
-- 자체 녹음 원본(.wav): **gitignore**, Google Drive 별도 저장
-- 전처리 산출물(MFCC .npy): gitignore
-- 샘플 1~2개만 `data/sample/` 에 commit (저장소 데모용)
-- Seoul Metro 음원: 라이선스 확인 후 별도 저장소·링크로 관리
+- 안내방송 원본(.mp3/.wav) 및 zip: **gitignore**, Google Drive 별도 저장
+- 전처리 산출물: gitignore
+- `data/metadata.csv` (파일→역 매핑)만 commit
+- `.tflite` 모델은 commit OK (펌웨어 통합용)
 
-## 디렉토리 구조 (계획)
+## 디렉토리 구조
 
 ```
 imsisul/
-├── CLAUDE.md              ← 이 문서
-├── README.md              ← 프로젝트 소개
-├── .gitignore
-├── docs/                  ← 발표자료, 보고서, 다이어그램
+├── CLAUDE.md / README.md / .gitignore
+├── docs/                  ← HTML 발표자료 (GitHub Pages: snup2e.github.io/hey-now)
+│   ├── index.html
+│   └── img/
 ├── data/
-│   ├── raw/               ← (gitignore) 원본 오디오
-│   │   ├── seoul_metro/   ← (gitignore) 공식 안내방송 음원
-│   │   └── field/         ← (gitignore) 1호선 자체 녹음
-│   ├── processed/         ← (gitignore) MFCC, 스펙트로그램
-│   ├── sample/            ← 소량 샘플 commit (저장소 데모)
-│   └── README.md          ← 데이터셋 출처/라이선스/수집 방법
-├── notebooks/             ← Colab 학습 노트북
-│   ├── 01_eda.ipynb               ← 안내방송 음향 분석
-│   ├── 02_preprocessing.ipynb     ← MFCC + SNR augmentation
-│   ├── 03_training_stage1.ipynb   ← 트리거 검출 KWS
-│   ├── 04_training_stage2.ipynb   ← 역 이름 분류
-│   └── 05_quantization.ipynb      ← INT8 양자화 + 검증
-├── models/                ← 학습된 모델
-│   ├── stage1_trigger.tflite      ← "이번 역은" 트리거 (~5KB)
-│   ├── stage2_station.tflite      ← 역 분류 (~50KB)
-│   └── checkpoints/               ← (gitignore)
-├── firmware/              ← STM32CubeIDE 프로젝트
-│   ├── Core/
-│   ├── Drivers/
-│   ├── X-CUBE-AI/
-│   └── Middlewares/
-├── hardware/              ← 회로도, 핀맵
-│   ├── pinout.md
-│   └── schematic.png
-└── scripts/               ← 유틸리티
-    ├── record_subway.md           ← 자체 녹음 가이드
-    ├── augment_snr.py             ← SNR 합성 증강
-    └── tflite_to_carray.py        ← TFLite → C 헤더 변환
+│   ├── raw/seoul_metro/   ← (gitignore) 안내방송 mp3
+│   ├── processed/         ← (gitignore) 16kHz wav, 클립, Colab 업로드용 zip
+│   ├── metadata.csv       ← 파일→역/변형 매핑
+│   └── sample/
+├── notebooks/
+│   ├── path1_train.ipynb          ← KWS+CNN 학습 (Colab)
+│   └── path1_train_complete.ipynb ← 학습 실행 결과 보존본
+├── models/
+│   ├── kws.tflite                 ← "이번 역은" 트리거 (15.6KB)
+│   ├── cnn.tflite                 ← 역 분류 14역 (16.4KB)
+│   └── path1_meta.json            ← 라벨·정규화 상수·파라미터
+├── firmware/              ← STM32 펌웨어 소스 + 통합 가이드
+│   ├── melspec.c/h                ← log-mel 추출 (CMSIS-DSP)
+│   ├── app_path1.c/h              ← KWS+CNN 파이프라인
+│   ├── model_runner.c/h           ← X-CUBE-AI 래퍼
+│   ├── app_demo.c/h               ← 데모 메인 루프
+│   ├── display.c/h                ← 결과 출력 (UART, LCD 확정 후 교체)
+│   ├── demo_audio.h / mel_filterbank.h / model_meta.h  ← 자산 헤더
+│   └── INTEGRATION_GUIDE.md       ← 빌드·통합 단계별 가이드
+└── scripts/               ← 전처리·학습·검증 유틸리티
+    ├── preprocess.py / build_metadata.py / split_clips.py
+    ├── gen_notebook.py / gen_demo_audio.py / gen_firmware_assets.py
+    ├── melspec_ref.py             ← log-mel 레퍼런스 (librosa 대조 검증)
+    └── verify_pipeline.py         ← KWS+CNN 통합 파이프라인 로컬 검증
 ```
 
-## 5주 로드맵
+## 진행 로드맵
 
-| 주차 | 단계 | 핵심 산출물 |
+| 단계 | 핵심 산출물 | 상태 |
 |---|---|---|
-| Phase 0 (현재) | 사전 확정 | 교수님 컨펌, 부품 추가 발주, 타겟 역 확정, 역할 분담 |
-| Phase 1 | 데이터셋 구축 | Seoul Metro 음원 수집 + 1호선 자체 녹음 첫 라운드 (10시간+) |
-| Phase 2 | 모델 학습 | stage1.tflite + stage2.tflite (val_acc 90%+, FP < 1%) |
-| Phase 3 | 하드웨어 통합 | INMP441 캡처 → MFCC 파이프라인 검증, 출력 디바이스 동작 확인 |
-| Phase 4 | 펌웨어 통합 | 2-stage 풀스택 실시간 추론, 1호선 녹음 재생 테스트 |
-| Phase 5 | 검증 & 시연 | 실차 시연 영상, SNR 강건성 평가, 발표 자료 |
+| 중간발표 | 주제·아키텍처 확정, HTML 발표자료 | ✅ 완료 |
+| Path 1 — 데이터 | Seoul Metro 음원 전처리, 클립 분할 | ✅ 완료 |
+| Path 1 — 학습 | kws.tflite + cnn.tflite (INT8) | ✅ 완료 |
+| Path 1 — 검증 | 통합 파이프라인 17/17 | ✅ 완료 |
+| Path 1 — 펌웨어 | STM32 펌웨어 소스 + 통합 가이드 | ✅ 소스 완료, 보드 빌드·테스트 대기 |
+| Path 1 — 시연 | 보드에서 데모 동작 확인 | ⬜ 친구 보드 빌드 후 |
+| Path 2 | 실차 녹음 → 재학습 → 실차 시연 | ⬜ |
 
-## 현재 진행 상황 (Phase 0)
+## 현재 진행 상황
 
-- [x] 프로젝트 주제 확정 (지하철 안내방송 기반 위치 알림)
-- [x] 페르소나 정의 (청각장애 + 상황적 청각차단)
-- [x] 타겟 노선 결정 (서울 1호선 일부 구간)
-- [x] 데이터 소스 확정 (Seoul Metro 공식 음원 + 1호선 자체 녹음)
-- [x] 기존 출튀 도우미 프로젝트 폐기
-- [ ] 타겟 구간(역 목록) 확정 — 친구 통근 경로 기반
-- [ ] 출력 디바이스 결정 (OLED / 진동 / 둘 다)
-- [ ] 부품 추가 발주 (OLED·진동모터)
-- [ ] 교수님께 주제 변경 컨펌
-- [ ] STM32CubeIDE + X-CUBE-AI 설치
-- [ ] Seoul Metro 음원 라이선스/이용약관 확인
+### 완료
+- [x] 타겟 구간 확정 — 1호선 성균관대 → 신도림 (14역)
+- [x] Seoul Metro 음원 확보 + 16kHz mono 전처리 + 메타데이터
+- [x] KWS(트리거) + CNN(역 분류) 학습 → INT8 tflite
+- [x] 통합 파이프라인 로컬 검증 (음원별 17/17, 연속 재생 시나리오 정상)
+- [x] STM32 펌웨어 소스 + X-CUBE-AI 통합 가이드 작성
+
+### 남은 일
+- [ ] 친구 보드(NUCLEO-F411RE)에서 펌웨어 빌드·플래시·테스트
+- [ ] 2.0" LCD 패널 모델 확정 → `display.c` LCD 드라이버 작성 (현재 UART 출력)
+- [ ] Path 2 — 1호선 실차 녹음, 재학습, 실차 시연
 
 ## 핵심 기술 결정 사항
 
 ### 모델 아키텍처 — 2-Stage 구조
 
-**Stage 1: 트리거 검출 (Always-on, lightweight)**
-- 입력: 16kHz, 1초 윈도우, MFCC (40 mel × 40 frame)
-- 출력: "이번 역은" / "다음 역은" / not-trigger 3-class
-- 모델: 매우 작은 CNN (~5KB)
-- 역할: stage2를 깨우는 게이트. 항상 동작하지만 전력 효율적
+**Stage 1: KWS — "이번 역은" 트리거 검출**
+- 입력: 16kHz, 1초 윈도우, log-mel (40 mel × 63 frame)
+- 출력: trigger / non-trigger 2-class
+- 모델: 작은 Conv2D CNN → `kws.tflite` 15.6KB
+- 검증: val accuracy 95.7%, trigger precision 94.4% / recall 93.0%
 
-**Stage 2: 역 이름 분류 (Triggered)**
-- 입력: 트리거 직후 2~3초 윈도우, MFCC
-- 출력: N개 역 × 2방향 = ~20~30 class (1호선 일부 구간만)
-- 모델: Conv2D 3층 + Dense (~50KB)
-- Confidence thresholding (softmax max < 0.85 → 알림 보류)
+**Stage 2: CNN — 역 이름 분류**
+- 입력: 트리거 직후 2초 윈도우, log-mel (40 mel × 126 frame)
+- 출력: 14역 분류 (성균관대~신도림)
+- 모델: 작은 Conv2D CNN → `cnn.tflite` 16.4KB
+- 검증: 윈도우 92.3%, 음원 단위 100% (17/17)
+
+**파이프라인 (`verify_pipeline.py` = 펌웨어 `app_path1.c`)**
+- KWS 1초 윈도우를 0.25초 간격 슬라이딩
+- 트리거 임계 0.6, **연속 3윈도우 디바운스**로 오검출 차단
+- 트리거 확정 시 시작점 +1.5초부터 2초를 CNN에 입력
+- CNN confidence < 0.5 → 분류 보류
 
 ### 신호 처리
-- 샘플링: 16kHz (음성 안내방송 충분)
-- 윈도우: 1초 (stage1), 2~3초 (stage2)
-- MFCC: 40 계수, log-mel 기반
-- VAD pre-gating으로 무음 구간 건너뛰기 (전력 절약)
+- 샘플링: 16kHz
+- 특징: log-mel spectrogram (n_fft 512, hop 256, 40 mel) — librosa `melspectrogram` + `power_to_db`
+- 펌웨어는 CMSIS-DSP FFT로 동일 알고리즘 재현 (`melspec_ref.py`로 librosa 대조 검증, 오차 ~1e-4 dB)
 
-### SNR 강건성 전략
-1. Per-Channel Energy Normalization (PCEN) 적용
-2. Multi-condition training (SNR 0~20dB 다양화)
-3. SpecAugment (시간/주파수 마스킹)
-4. 자체 녹음 잡음 트랙으로 augmentation
-5. Confidence threshold로 불확실 케이스 거부
-
-### 핀맵 (잠정)
-```
-INMP441 (I2S2 - 마이크 입력)
-  VDD → 3.3V
-  GND → GND
-  SCK → PB10 (I2S2_CK)
-  WS  → PB12 (I2S2_WS)
-  SD  → PB15 (I2S2_SD)
-  L/R → GND
-
-OLED SSD1306 (I2C1 - 텍스트 출력, TBD)
-  VCC → 3.3V
-  GND → GND
-  SCL → PB6 (I2C1_SCL)
-  SDA → PB7 (I2C1_SDA)
-
-진동모터 (GPIO PWM, TBD)
-  IN  → PA8 (TIM1_CH1, PWM)
-
-MAX98357A (I2S3 - 백업 알람음, 선택)
-  BCLK → PC10 (I2S3_CK)
-  LRC  → PA15 (I2S3_WS)
-  DIN  → PC12 (I2S3_SD)
-```
-※ 핀맵은 STM32CubeMX에서 최종 검증 필요
+### 핀맵
+- Path 1은 마이크를 쓰지 않으므로 I2S 입력 불필요
+- LCD(SPI) 핀은 패널 확정 후 CubeMX에서 설정 — `firmware/INTEGRATION_GUIDE.md` 참조
+- Path 2에서 ICS43434(I2S) 입력 핀맵 확정 예정
 
 ## 참고 자료
 
@@ -200,13 +175,11 @@ MAX98357A (I2S3 - 백업 알람음, 선택)
 - Lumename: Wearable Device for Hearing Impaired (arXiv 2508.01576) — 개인화 KWS + 햅틱
 - SSIES: A TinyML device for risk identification for people with hearing loss (ScienceDirect, 2025) — 응급음 + DOA
 - ARM ML-KWS-for-MCU: https://github.com/ARM-software/ML-KWS-for-MCU
-- TinySV: Speaker Verification in TinyML (ACM 2024)
 
 ### 도구·인프라
 - TinyML 책 GitHub: https://github.com/yunho0130/tensorflow-lite
 - X-CUBE-AI 가이드 (DigiKey): https://www.digikey.com/en/maker/projects/tinyml-getting-started-with-stm32-x-cube-ai/f94e1c8bfc1e4b6291d0f672d780d2c0
 - SpecAugment 논문 (Google, INTERSPEECH 2019)
-- PCEN 논문 (Wang et al., ICASSP 2017)
 
 ### 데이터
 - 서울교통공사 공개 자료실 — 안내방송 음원 (라이선스 확인 필요)
@@ -214,9 +187,8 @@ MAX98357A (I2S3 - 백업 알람음, 선택)
 ## Claude Code 작업 시 주의사항
 
 - **강의자료 PDF는 commit 금지** (`project_instruction/`은 .gitignore)
-- **대용량 데이터셋(.wav, .npy)은 commit 금지** — Google Drive 또는 별도 저장소 사용
+- **대용량 데이터셋(.wav, .mp3, .zip)은 commit 금지** — Google Drive 또는 별도 저장소 사용
 - **자체 녹음 음원은 개인정보(승객 대화)** 포함 가능 — 학습 후 원본 보관 시 주의
 - **.tflite 모델은 commit OK** (펌웨어 통합용)
 - **STM32CubeIDE 빌드 산출물(Debug/, Release/) commit 금지**
-- **Seoul Metro 음원 직접 commit 금지** — 라이선스 미확정. 링크·다운로드 스크립트로 관리
 - 한국어로 응답해도 OK, 코드 주석은 영어 권장
