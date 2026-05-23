@@ -61,9 +61,12 @@
   "이번 역은"이 ~4s에 시작 (무음 검출로 자동 분할)
 
 ### 2. 1호선 차내 자체 녹음 (Path 2)
-- 팀원/협력자가 1호선 실제 탑승 중 스마트폰 녹음
-- 통근 시간대(혼잡) + 한산한 시간대 분리 수집
-- 출입문 개폐, 승객 잡담 등 자연 잡음 포함
+- **녹음 구간: 성균관대 → 구로 (13역)** — Path 1의 14역(→신도림)에서 한 역 단축, 친구 통학 실제 구간 기준
+- **녹음 장비: STM32 보드 + ICS43434 마이크 (폰 X)** — 추론 시점의 마이크 도메인과 일치시켜야 학습이 유효
+- 보드가 USB-CDC로 raw PCM을 노트북에 스트리밍, 노트북 Python(`scripts/path2_capture_ui.py`)이 long.wav 저장 + 역 마킹
+- 트립 끝나면 `scripts/path2_slice.py`가 마크 기준 ±윈도우로 잘라 클립화
+- 통근/한산 시간대 각각 수집, 출입문·승객 잡담 자연 잡음 포함
+- 친구가 3트립(왕복) 정도 측정 예정 — 역당 ~6 샘플 + 증강
 
 ### 3. 데이터 증강
 - 볼륨 변화, 가우시안 노이즈 (SNR 0~25dB), 시간 시프트
@@ -85,9 +88,11 @@ imsisul/
 │   ├── index.html
 │   └── img/
 ├── data/
-│   ├── raw/seoul_metro/   ← (gitignore) 안내방송 mp3
+│   ├── raw/seoul_metro/   ← (gitignore) Path 1 안내방송 mp3
+│   ├── raw/line1_live/    ← (gitignore) Path 2 트립별 audio.wav + marks.json
 │   ├── processed/         ← (gitignore) 16kHz wav, 클립, Colab 업로드용 zip
-│   ├── metadata.csv       ← 파일→역/변형 매핑
+│   ├── metadata.csv       ← Path 1 파일→역/변형 매핑
+│   ├── path2_metadata.csv ← Path 2 클립→역/트립 매핑
 │   └── sample/
 ├── notebooks/
 │   ├── path1_train.ipynb          ← KWS+CNN 학습 (Colab)
@@ -104,11 +109,14 @@ imsisul/
 │   ├── display.c/h                ← 결과 출력 (UART, LCD 확정 후 교체)
 │   ├── demo_audio.h / mel_filterbank.h / model_meta.h  ← 자산 헤더
 │   └── INTEGRATION_GUIDE.md       ← 빌드·통합 단계별 가이드
-└── scripts/               ← 전처리·학습·검증 유틸리티
+└── scripts/               ← 전처리·학습·검증·수집 유틸리티
     ├── preprocess.py / build_metadata.py / split_clips.py
     ├── gen_notebook.py / gen_demo_audio.py / gen_firmware_assets.py
     ├── melspec_ref.py             ← log-mel 레퍼런스 (librosa 대조 검증)
-    └── verify_pipeline.py         ← KWS+CNN 통합 파이프라인 로컬 검증
+    ├── verify_pipeline.py         ← KWS+CNN 통합 파이프라인 로컬 검증
+    ├── path2_capture_ui.py        ← Path 2 USB-CDC 캡처 + 마킹 Tkinter UI
+    ├── path2_slice.py             ← long.wav + marks → 역별 클립 + 메타데이터
+    └── README_path2.md            ← 친구용 실차 녹음 단계별 가이드
 ```
 
 ## 진행 로드맵
@@ -121,7 +129,10 @@ imsisul/
 | Path 1 — 검증 | 통합 파이프라인 17/17 | ✅ 완료 |
 | Path 1 — 펌웨어 | STM32 펌웨어 소스 + 통합 가이드 | ✅ 소스 완료, 보드 빌드·테스트 대기 |
 | Path 1 — 시연 | 보드에서 데모 동작 확인 | ⬜ 친구 보드 빌드 후 |
-| Path 2 | 실차 녹음 → 재학습 → 실차 시연 | ⬜ |
+| Path 2 — 수집 도구 | USB-CDC 캡처 UI + 마크 슬라이서 (mock 검증 완료) | ✅ 완료 |
+| Path 2 — 수집 펌웨어 | ICS43434 I2S → USB-CDC 송신 펌웨어 | ⬜ Path 1 빌드 후 |
+| Path 2 — 실차 녹음 | 친구 통학 시 3트립 (왕복) 수집 | ⬜ |
+| Path 2 — 재학습 + 시연 | 라이브 데이터 합쳐 재학습, 실차 시연 | ⬜ |
 
 ## 현재 진행 상황
 
@@ -135,7 +146,9 @@ imsisul/
 ### 남은 일
 - [ ] 친구 보드(NUCLEO-F411RE)에서 펌웨어 빌드·플래시·테스트
 - [ ] 2.0" LCD 패널 모델 확정 → `display.c` LCD 드라이버 작성 (현재 UART 출력)
-- [ ] Path 2 — 1호선 실차 녹음, 재학습, 실차 시연
+- [ ] Path 2 수집 펌웨어 — ICS43434 I2S DMA → USB-CDC 송신 (CubeMX에서 I2S+USB device 활성, Path 1과 별도 프로젝트)
+- [ ] Path 2 실차 녹음 (친구 통학 ×3트립) → `path2_slice.py`로 클립화
+- [ ] Path 2 재학습 (라이브 + Seoul Metro 합산, 13-class) → 실차 시연
 
 ## 핵심 기술 결정 사항
 
