@@ -143,7 +143,7 @@ imsisul/
 - [x] KWS(트리거) + CNN(역 분류) 학습 → INT8 tflite
 - [x] 통합 파이프라인 로컬 검증 (음원별 17/17, 연속 재생 시나리오 정상)
 - [x] Path 1 STM32 펌웨어 소스 + X-CUBE-AI 통합 가이드 작성
-- [x] Path 2 하드웨어 결선 (ICS-43434 빵판 + ST7789V LCD F-F 직결 — LCD 모듈은 응답 없음, 보류)
+- [x] Path 2 하드웨어 결선 — ICS-43434는 **F-F로 NUCLEO 모르포 직결**(빵판 폐기, 빵판이 실차 진동에 약함이 확인됨), LCD F-F 직결(모듈 응답 없음, 보류)
 - [x] Path 2 수집 펌웨어 (`E:\STM32CubeIDE\workspace\bringup`) — I2S2 circular DMA → USART2 921600 raw 16-bit mono PCM. 보드에 플래시 완료
 - [x] Path 2 캡처 UI 개선 — 등교/하교 picker, dBFS 레벨미터(peak hold 포함), 스크롤 13역, ↻ 방향 전환(왕복 segment), 짝수 바이트 정렬 보장
 
@@ -185,28 +185,54 @@ imsisul/
 
 **Path 2 수집 펌웨어 (확정, 보드 플래시됨)**
 
-| 페리페럴 | 핀 | 모르포 위치 | 비고 |
-|---|---|---|---|
-| I2S2_WS (LRCL) | PB12 | CN10-16 | ICS-43434 |
-| I2S2_CK (BCLK) | PB13 | CN10-30 | |
-| I2S2_SD (DOUT) | PB15 | CN10-26 | |
-| ICS-43434 SEL | — | GND | 좌채널 mono 고정 |
-| USART2_TX (VCP) | PA2 | CN10-35 | ST-Link 경유 921600 baud |
-| USART2_RX (VCP) | PA3 | CN10-37 | |
+ICS-43434는 **F-F 점퍼로 모르포 직결** (빵판 사용 X — 친구 첫 트립에서 빵판 위 점퍼 진동으로 LSB가 0x00/0xFF만 들어오는 클리핑 데이터 생성된 사례 확인).
+
+| 마이크 핀 | NUCLEO 핀 | 모르포 위치 |
+|---|---|---|
+| VCC | 3V3 | CN7-16 |
+| GND | GND | CN10-9 |
+| SEL | GND | CN10-20 (또는 마이크 위에서 GND↔SEL 짧은 점프) |
+| BCLK | PB13 (I2S2_CK) | CN10-30 |
+| LRCL (WS) | PB12 (I2S2_WS) | CN10-16 |
+| DOUT (SD) | PB15 (I2S2_SD) | CN10-26 |
+
+USART2 (ST-Link VCP, 921600 baud) — PA2/PA3는 보드 내부 라우팅, 외부 점퍼 불필요.
 
 **Path 1 데모 LCD (배선만 완료, 모듈 불량으로 보류)**
 
-| 페리페럴 | 핀 | 모르포 위치 |
+| LCD 핀 | NUCLEO 핀 | 모르포 위치 |
 |---|---|---|
-| SPI1_SCK | PA5 | CN10-11 |
-| SPI1_MOSI | PA7 | CN10-15 |
-| LCD_CS | PB6 | CN10-17 |
-| LCD_DC (RS) | PA9 | CN10-21 |
-| LCD_RST | PA10 | CN10-33 |
+| SCL | PA5 (SPI1_SCK) | CN10-11 |
+| SDA | PA7 (SPI1_MOSI) | CN10-15 |
+| CS | PB6 | CN10-17 |
+| RS (DC) | PA9 | CN10-21 |
+| RST | PA10 | CN10-33 |
 
 - Path 1 모델 추론은 마이크 입력 없이 Flash 음원 사용 → I2S 비활성
 - Path 2 수집 펌웨어는 LCD 사용 안 함 → SPI1 비활성 (배선만 살아 있음)
-- 3V3·GND는 CN7-16 / CN10-9에서 빵판 (+)(-) 레일로 분배
+
+### Path 2 데이터 품질 검증 신호
+
+매 트립 전 + WAV 사후 점검 시 봐야 할 패턴:
+
+| 신호 | 정상 | 비정상 |
+|---|---|---|
+| 평상시 RMS | 20~50 | 1000+ (클리핑) |
+| 평상시 dBFS | -50 이하 | -10 위 (노란/빨간 영역) |
+| 박수 시 RMS | 1000+ 로 튐 | 변화 없음 |
+| WAV LSB 분포 | 256가지 다 나옴 | 0x00, 0xFF 두 가지만 (= ΔΣ saturated, 결선 불안정 신호) |
+| 클리핑 샘플 수 (전체) | 0 또는 극소 | 0.1% 이상 |
+
+LSB 분포는 `python -c` 로 빠르게: `np.unique(arr & 0xFF).size`. 256이면 정상, 2면 결선 의심.
+
+### 마이크 보호 원칙 (도메인 매칭)
+
+학습 데이터는 추론 환경과 도메인이 일치해야 의미 있음. Path 2에서:
+
+- ✓ **휴지/솜 윈드스크린** — 바람·핸들링 공기압만 차단, 음파는 통과
+- ✗ **박스/통/두꺼운 천** — 공진 + 음향 도메인 변경 → 클린 데이터(Path 1)의 변주가 됨, 정보 가치 없음
+- ✓ **열차 모터·HVAC·승객 잡담은 그대로 녹음** — 이것이 모델이 학습해야 할 노이즈 도메인
+- ✓ 마이크 보드 + NUCLEO를 같은 받침에 고정 — 상대 진동 방지
 
 ## 참고 자료
 
