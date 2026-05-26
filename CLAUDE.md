@@ -129,25 +129,29 @@ imsisul/
 | Path 1 — 검증 | 통합 파이프라인 17/17 | ✅ 완료 |
 | Path 1 — 펌웨어 | STM32 펌웨어 소스 + 통합 가이드 | ✅ 소스 완료, 보드 빌드·테스트 대기 |
 | Path 1 — 시연 | 보드에서 데모 동작 확인 | ⬜ 친구 보드 빌드 후 |
-| Path 2 — 수집 도구 | USB-CDC 캡처 UI + 마크 슬라이서 (mock 검증 완료) | ✅ 완료 |
-| Path 2 — 수집 펌웨어 | ICS43434 I2S → USB-CDC 송신 펌웨어 | ⬜ Path 1 빌드 후 |
-| Path 2 — 실차 녹음 | 친구 통학 시 3트립 (왕복) 수집 | ⬜ |
+| Path 2 — 수집 도구 | 캡처 UI(등교/하교 picker · dBFS 레벨미터 · 왕복 segment) + 슬라이서 | ✅ 완료 |
+| Path 2 — 수집 하드웨어 | ICS-43434 빵판 결선 + LCD F-F 직결 (LCD 모듈은 불량) | ✅ 결선 완료 |
+| Path 2 — 수집 펌웨어 | I2S2 circular DMA → USART2 921600 raw 16-bit PCM 스트림 | ✅ 완료, 보드 플래시됨 |
+| Path 2 — 실차 녹음 | 친구 통학 3~5트립 (왕복) 수집 | ⬜ 친구 진행 |
 | Path 2 — 재학습 + 시연 | 라이브 데이터 합쳐 재학습, 실차 시연 | ⬜ |
 
 ## 현재 진행 상황
 
 ### 완료
-- [x] 타겟 구간 확정 — 1호선 성균관대 → 신도림 (14역)
+- [x] 타겟 구간 확정 — Path 1 1호선 성균관대 → 신도림 (14역), Path 2 성균관대 → 구로 (13역)
 - [x] Seoul Metro 음원 확보 + 16kHz mono 전처리 + 메타데이터
 - [x] KWS(트리거) + CNN(역 분류) 학습 → INT8 tflite
 - [x] 통합 파이프라인 로컬 검증 (음원별 17/17, 연속 재생 시나리오 정상)
-- [x] STM32 펌웨어 소스 + X-CUBE-AI 통합 가이드 작성
+- [x] Path 1 STM32 펌웨어 소스 + X-CUBE-AI 통합 가이드 작성
+- [x] Path 2 하드웨어 결선 (ICS-43434 빵판 + ST7789V LCD F-F 직결 — LCD 모듈은 응답 없음, 보류)
+- [x] Path 2 수집 펌웨어 (`E:\STM32CubeIDE\workspace\bringup`) — I2S2 circular DMA → USART2 921600 raw 16-bit mono PCM. 보드에 플래시 완료
+- [x] Path 2 캡처 UI 개선 — 등교/하교 picker, dBFS 레벨미터(peak hold 포함), 스크롤 13역, ↻ 방향 전환(왕복 segment), 짝수 바이트 정렬 보장
 
 ### 남은 일
-- [ ] 친구 보드(NUCLEO-F411RE)에서 펌웨어 빌드·플래시·테스트
-- [ ] 2.0" LCD 패널 모델 확정 → `display.c` LCD 드라이버 작성 (현재 UART 출력)
-- [ ] Path 2 수집 펌웨어 — ICS43434 I2S DMA → USB-CDC 송신 (CubeMX에서 I2S+USB device 활성, Path 1과 별도 프로젝트)
-- [ ] Path 2 실차 녹음 (친구 통학 ×3트립) → `path2_slice.py`로 클립화
+- [ ] 친구 노트북에 repo clone(또는 ZIP) + pyserial 설치 → COM 포트 확인
+- [ ] 친구 보드(NUCLEO-F411RE)에서 Path 1 펌웨어 빌드·플래시·테스트
+- [ ] Path 1 LCD: ST7789V 다른 조각으로 교체 시도 또는 UART 폴백 유지
+- [ ] Path 2 실차 녹음 (친구 통학 3~5트립, 등교/하교 다양화) → `path2_slice.py`로 클립화
 - [ ] Path 2 재학습 (라이브 + Seoul Metro 합산, 13-class) → 실차 시연
 
 ## 핵심 기술 결정 사항
@@ -177,10 +181,32 @@ imsisul/
 - 특징: log-mel spectrogram (n_fft 512, hop 256, 40 mel) — librosa `melspectrogram` + `power_to_db`
 - 펌웨어는 CMSIS-DSP FFT로 동일 알고리즘 재현 (`melspec_ref.py`로 librosa 대조 검증, 오차 ~1e-4 dB)
 
-### 핀맵
-- Path 1은 마이크를 쓰지 않으므로 I2S 입력 불필요
-- LCD(SPI) 핀은 패널 확정 후 CubeMX에서 설정 — `firmware/INTEGRATION_GUIDE.md` 참조
-- Path 2에서 ICS43434(I2S) 입력 핀맵 확정 예정
+### 핀맵 (NUCLEO-F411RE)
+
+**Path 2 수집 펌웨어 (확정, 보드 플래시됨)**
+
+| 페리페럴 | 핀 | 모르포 위치 | 비고 |
+|---|---|---|---|
+| I2S2_WS (LRCL) | PB12 | CN10-16 | ICS-43434 |
+| I2S2_CK (BCLK) | PB13 | CN10-30 | |
+| I2S2_SD (DOUT) | PB15 | CN10-26 | |
+| ICS-43434 SEL | — | GND | 좌채널 mono 고정 |
+| USART2_TX (VCP) | PA2 | CN10-35 | ST-Link 경유 921600 baud |
+| USART2_RX (VCP) | PA3 | CN10-37 | |
+
+**Path 1 데모 LCD (배선만 완료, 모듈 불량으로 보류)**
+
+| 페리페럴 | 핀 | 모르포 위치 |
+|---|---|---|
+| SPI1_SCK | PA5 | CN10-11 |
+| SPI1_MOSI | PA7 | CN10-15 |
+| LCD_CS | PB6 | CN10-17 |
+| LCD_DC (RS) | PA9 | CN10-21 |
+| LCD_RST | PA10 | CN10-33 |
+
+- Path 1 모델 추론은 마이크 입력 없이 Flash 음원 사용 → I2S 비활성
+- Path 2 수집 펌웨어는 LCD 사용 안 함 → SPI1 비활성 (배선만 살아 있음)
+- 3V3·GND는 CN7-16 / CN10-9에서 빵판 (+)(-) 레일로 분배
 
 ## 참고 자료
 
