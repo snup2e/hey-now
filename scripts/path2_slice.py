@@ -46,9 +46,16 @@ def slice_trip(trip_dir: Path, pre_s: float, post_s: float) -> list[dict]:
     info = json.loads(marks_path.read_text(encoding="utf-8"))
     sr = info["sample_rate"]
     trip_id = info["trip_id"]
-    direction = info["direction"]
-    marks = info["marks"]
-    if not marks:
+
+    # marks.json may be in the new "segments" format (round-trip aware) or the
+    # original flat format. Normalise to a list of (direction, marks) pairs.
+    if "segments" in info:
+        segs = [(s["direction"], s["marks"]) for s in info["segments"]]
+    else:
+        segs = [(info.get("direction", "north"), info.get("marks", []))]
+
+    total_marks = sum(len(m) for _, m in segs)
+    if total_marks == 0:
         print(f"  스킵 (마크 0개): {trip_id}")
         return []
 
@@ -65,34 +72,35 @@ def slice_trip(trip_dir: Path, pre_s: float, post_s: float) -> list[dict]:
 
     rows = []
     seq = Counter()
-    for m in sorted(marks, key=lambda x: x["sample_index"]):
-        center = m["sample_index"]
-        start = max(0, center - pre_n)
-        end = min(total, center + post_n)
-        clip = pcm[start * 2 : end * 2]
-        if not clip:
-            print(f"    경고: {m['station']} 마크가 오디오 범위 밖 (skip)")
-            continue
+    for direction, marks in segs:
+        for m in sorted(marks, key=lambda x: x["sample_index"]):
+            center = m["sample_index"]
+            start = max(0, center - pre_n)
+            end = min(total, center + post_n)
+            clip = pcm[start * 2 : end * 2]
+            if not clip:
+                print(f"    경고: {m['station']} 마크가 오디오 범위 밖 (skip)")
+                continue
 
-        station = m["station"]
-        seq[station] += 1
-        name = f"{station}_{seq[station]}.wav"
-        out_path = out_dir / name
-        with wave.open(str(out_path), "wb") as ow:
-            ow.setnchannels(1)
-            ow.setsampwidth(2)
-            ow.setframerate(sr)
-            ow.writeframes(clip)
+            station = m["station"]
+            seq[station] += 1
+            name = f"{station}_{seq[station]}.wav"
+            out_path = out_dir / name
+            with wave.open(str(out_path), "wb") as ow:
+                ow.setnchannels(1)
+                ow.setsampwidth(2)
+                ow.setframerate(sr)
+                ow.writeframes(clip)
 
-        rows.append({
-            "clip_file": f"{trip_id}/{name}",
-            "station": station,
-            "trip_id": trip_id,
-            "direction": direction,
-            "mark_offset_sec": round((center - start) / sr, 3),
-            "clip_sec": round((end - start) / sr, 3),
-            "sample_rate": sr,
-        })
+            rows.append({
+                "clip_file": f"{trip_id}/{name}",
+                "station": station,
+                "trip_id": trip_id,
+                "direction": direction,
+                "mark_offset_sec": round((center - start) / sr, 3),
+                "clip_sec": round((end - start) / sr, 3),
+                "sample_rate": sr,
+            })
 
     print(f"  {trip_id}: {len(rows)} 클립  →  {out_dir.relative_to(ROOT)}")
     return rows
