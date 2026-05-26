@@ -13,12 +13,16 @@ Output per recording session:
   data/raw/line1_live/<trip_id>/audio.wav
   data/raw/line1_live/<trip_id>/marks.json
 
+On start, a small dialog asks 등교 / 하교 — the choice goes into the
+trip_id and seeds the initial station order. Use the ↻ 방향 전환 button
+inside the UI to flip mid-trip for a round-trip recording.
+
 Mock mode (no board yet) — replays an existing wav at real-time pace
 so the UI is fully testable on a laptop:
-  python scripts/path2_capture_ui.py --mock-wav data/processed/wav/성균관대.wav --direction north
+  python scripts/path2_capture_ui.py --mock-wav data/processed/wav/성균관대.wav
 
 Real run:
-  python scripts/path2_capture_ui.py --port COM5 --direction north
+  python scripts/path2_capture_ui.py --port COM5
 """
 import argparse
 import array
@@ -34,11 +38,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# 1호선 성균관대 → 구로 (상행 = north). south = reversed.
-STATIONS_NORTH = [
+# 1호선 친구 통학 구간 (13역).
+# 하교: 성균관대 → 구로 (이 순서가 baseline)
+# 등교: 구로 → 성균관대 (= reversed)
+STATIONS_HAGYO = [
     "성균관대", "의왕", "당정", "군포", "금정", "명학", "안양",
     "관악", "석수", "금천구청", "독산", "가산디지털단지", "구로",
 ]
+
+
+def stations_for(direction: str) -> list[str]:
+    """Return the station order for a given direction label."""
+    return STATIONS_HAGYO if direction == "하교" else list(reversed(STATIONS_HAGYO))
 
 
 # ---------- audio sources ----------
@@ -202,9 +213,9 @@ class CaptureUI:
 
         head = tk.Frame(top, bg="#1a1a1a")
         head.pack(fill="x", padx=10, pady=(8, 4))
-        self.direction_var = tk.StringVar(value=self.current_direction.upper())
+        self.direction_var = tk.StringVar(value=self.current_direction)
         tk.Label(head, textvariable=self.direction_var, fg="#fc4", bg="#1a1a1a",
-                 font=("Consolas", 14, "bold")).pack(side="left")
+                 font=("", 16, "bold")).pack(side="left")
         tk.Label(head, text=f"  ·  {self.trip_id}", fg="#aaa", bg="#1a1a1a",
                  font=("", 10)).pack(side="left")
         self.elapsed_var = tk.StringVar(value="0:00")
@@ -397,14 +408,14 @@ class CaptureUI:
 
     def _flip_direction(self):
         self._snapshot_segment()
-        # Reverse the station order for the return leg.
-        new_dir = "south" if self.current_direction == "north" else "north"
+        # Swap 등교 ↔ 하교 (reverses the station order).
+        new_dir = "하교" if self.current_direction == "등교" else "등교"
         self.current_direction = new_dir
         self.current_stations = list(reversed(self.current_stations))
         self.marks = {}
         self.next_idx = 0
         self.segment_start_sample = self.recorder.current_sample()
-        self.direction_var.set(self.current_direction.upper())
+        self.direction_var.set(self.current_direction)
         self._rebuild_station_buttons()
         self.list_canvas.yview_moveto(0.0)
 
@@ -436,30 +447,62 @@ class CaptureUI:
 
 # ---------- main ----------
 
+def ask_direction() -> str:
+    """Pop a small picker so the user chooses 등교 / 하교 at start.
+
+    Returns "등교" or "하교", or None if the user closed the dialog.
+    """
+    win = tk.Tk()
+    win.title("Path 2 — 방향 선택")
+    win.geometry("420x230")
+    win.resizable(False, False)
+    picked = {"v": None}
+
+    def choose(v):
+        picked["v"] = v
+        win.destroy()
+
+    tk.Label(win, text="이번 트립은?", font=("", 16, "bold")).pack(pady=(16, 8))
+    tk.Button(win, text="📚  등교   (구로 → 성균관대)",
+              font=("", 14), height=2, bg="#fc4",
+              command=lambda: choose("등교")).pack(fill="x", padx=24, pady=4)
+    tk.Button(win, text="🏫  하교   (성균관대 → 구로)",
+              font=("", 14), height=2, bg="#7e7",
+              command=lambda: choose("하교")).pack(fill="x", padx=24, pady=4)
+    tk.Label(win, text="(왕복이면 트립 중간에 ↻ 방향 전환 버튼으로 전환)",
+             fg="#666", font=("", 9)).pack(pady=(8, 0))
+    win.mainloop()
+    return picked["v"]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--port", help="USB-CDC serial port (e.g. COM5, /dev/ttyACM0)")
     src.add_argument("--mock-wav", type=Path,
                      help="replay an existing wav at real-time pace")
-    ap.add_argument("--direction", choices=["north", "south"], required=True,
-                    help="north = 성균관대→구로 (상행), south = reverse")
     ap.add_argument("--sr", type=int, default=16000, help="sample rate (Hz)")
     ap.add_argument("--out-root", type=Path,
                     default=ROOT / "data" / "raw" / "line1_live")
     args = ap.parse_args()
 
-    stations = STATIONS_NORTH if args.direction == "north" \
-                              else list(reversed(STATIONS_NORTH))
+    # Pick starting direction via small Tk dialog (mock mode defaults to 하교).
+    if args.mock_wav:
+        direction = "하교"
+    else:
+        direction = ask_direction()
+        if direction is None:
+            sys.exit("방향 선택 취소.")
 
-    trip_id = datetime.now().strftime("%Y%m%d_%H%M") + "_" + args.direction
+    stations = stations_for(direction)
+    trip_id = datetime.now().strftime("%Y%m%d_%H%M") + "_" + direction
     out_dir = args.out_root / trip_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     source = (MockSource(args.mock_wav, args.sr) if args.mock_wav
               else SerialSource(args.port, args.sr))
     recorder = Recorder(source, out_dir / "audio.wav", args.sr)
-    CaptureUI(recorder, stations, out_dir, trip_id, args.direction).run()
+    CaptureUI(recorder, stations, out_dir, trip_id, direction).run()
 
 
 if __name__ == "__main__":

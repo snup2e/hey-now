@@ -6,9 +6,10 @@
 ## 한 줄 요약
 
 1. 보드(ICS43434 마이크 결선됨) USB로 노트북에 연결
-2. `python scripts/path2_capture_ui.py --port <COMx> --direction north`
-3. 트립 동안 안내방송이 시작될 때마다 **스페이스바**
-4. 도착해서 종료 → `python scripts/path2_slice.py` → 클립·메타데이터 자동 생성
+2. `python scripts/path2_capture_ui.py --port <COMx>` → 뜨는 다이얼로그에서 **등교 / 하교** 선택
+3. 트립 동안 안내방송이 시작될 때마다 **스페이스바** — 상단 dBFS 레벨미터로 마이크 입력 모니터링
+4. 왕복이면 종점에서 **↻ 방향 전환** 버튼 누르고 계속 녹음
+5. 도착해서 종료 → `python scripts/path2_slice.py` → 클립·메타데이터 자동 생성
 
 ## 0. 준비물
 
@@ -24,14 +25,14 @@
 - **macOS/Linux**: `ls /dev/tty.usbmodem*` 또는 `ls /dev/ttyACM*`
 
 ```powershell
-# 상행 (성균관대 → 구로) 시작 예시
-python scripts/path2_capture_ui.py --port COM5 --direction north
-
-# 하행 (구로 → 성균관대)
-python scripts/path2_capture_ui.py --port COM5 --direction south
+python scripts/path2_capture_ui.py --port COM5
 ```
 
-창이 뜨면 즉시 녹음 시작. **첫 안내방송 전에 띄워두기.**
+작은 다이얼로그가 먼저 뜸:
+- **📚 등교 (구로 → 성균관대)** — 집에서 학교로 가는 트립
+- **🏫 하교 (성균관대 → 구로)** — 학교에서 집으로 가는 트립
+
+선택하면 본 캡처 창이 열림. **첫 안내방송 전에 띄워두기.** 왕복 트립이면 종점에서 ↻ 방향 전환 버튼으로 방향 바꾸고 계속 녹음 가능 — 하나의 audio.wav에 두 구간이 들어가고 marks.json에 segments 두 개로 저장됨.
 
 ## 2. 트립 중
 
@@ -48,7 +49,8 @@ python scripts/path2_capture_ui.py --port COM5 --direction south
 - 파일 두 개가 저장됨:
   - `data/raw/line1_live/<trip_id>/audio.wav` — 트립 통째 녹음
   - `data/raw/line1_live/<trip_id>/marks.json` — 역별 마크 타임스탬프
-- `<trip_id>` = `YYYYMMDD_HHMM_<direction>` (예: `20260524_0742_north`)
+- `<trip_id>` = `YYYYMMDD_HHMM_<등교|하교>` (예: `20260524_0742_등교`)
+- marks.json은 `segments[]` 배열 — 왕복이면 두 segment, 단방향이면 하나
 
 ## 4. 클립 + 메타데이터 생성
 
@@ -56,7 +58,7 @@ python scripts/path2_capture_ui.py --port COM5 --direction south
 
 ```bash
 python scripts/path2_slice.py            # 새로 추가된 트립만 처리
-python scripts/path2_slice.py --trip 20260524_0742_north   # 특정 트립만
+python scripts/path2_slice.py --trip 20260524_0742_등교   # 특정 트립만
 python scripts/path2_slice.py --pre 5 --post 14            # 윈도우 조정
 ```
 
@@ -71,9 +73,7 @@ python scripts/path2_slice.py --pre 5 --post 14            # 윈도우 조정
 보드/펌웨어가 아직 없어도 UI 동작은 확인 가능:
 
 ```bash
-python scripts/path2_capture_ui.py \
-    --mock-wav data/processed/wav/성균관대.wav \
-    --direction north
+python scripts/path2_capture_ui.py --mock-wav data/processed/wav/성균관대.wav
 ```
 
 mock 모드는 입력 wav를 무한 반복 재생하면서 실시간처럼 스트림합니다. UI 인터랙션, 저장 포맷, 슬라이서까지 전부 보드 없이 검증 가능.
