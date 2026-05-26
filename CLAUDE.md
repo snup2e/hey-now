@@ -132,7 +132,7 @@ imsisul/
 | Path 2 — 수집 도구 | 캡처 UI(등교/하교 picker · dBFS 레벨미터 · 왕복 segment) + 슬라이서 | ✅ 완료 |
 | Path 2 — 수집 하드웨어 | ICS-43434 빵판 결선 + LCD F-F 직결 (LCD 모듈은 불량) | ✅ 결선 완료 |
 | Path 2 — 수집 펌웨어 | I2S2 circular DMA → USART2 921600 raw 16-bit PCM 스트림 | ✅ 완료, 보드 플래시됨 |
-| Path 2 — 실차 녹음 | 친구 통학 3~5트립 (왕복) 수집 | ⬜ 친구 진행 |
+| Path 2 — 실차 녹음 | 친구 통학 **4 one-way** (2일 통학, 3 train + 1 test) | ⬜ 친구 진행 |
 | Path 2 — 재학습 + 시연 | 라이브 데이터 합쳐 재학습, 실차 시연 | ⬜ |
 
 ## 현재 진행 상황
@@ -151,8 +151,33 @@ imsisul/
 - [ ] 친구 노트북에 repo clone(또는 ZIP) + pyserial 설치 → COM 포트 확인
 - [ ] 친구 보드(NUCLEO-F411RE)에서 Path 1 펌웨어 빌드·플래시·테스트
 - [ ] Path 1 LCD: ST7789V 다른 조각으로 교체 시도 또는 UART 폴백 유지
-- [ ] Path 2 실차 녹음 (친구 통학 3~5트립, 등교/하교 다양화) → `path2_slice.py`로 클립화
+- [ ] Path 2 실차 녹음 — 친구 통학 **4 one-way (2일)** → `scripts/README_path2.md`의 4-트립 plan 참조
 - [ ] Path 2 재학습 (라이브 + Seoul Metro 합산, 13-class) → 실차 시연
+
+## Path 2 데이터 수집 계획 (4 one-way trip 기준)
+
+지하철 객차는 enclosed acoustic 환경이고 안내방송은 KORAIL 동일 녹음음원의 반복 재생이라 트립간 variation이 작음. Sample-complexity 계산상 클래스당 effective ~75 이상이면 충분 (95%+ 정확도). Path 1 클린 음원이 클래스당 ~30 effective 기여, 따라서 Path 2 raw 3개/역 = train+aug 후 ~45/역 + Path 1 = ~75/역 충족.
+
+**2일 통학 일정**
+
+| Day | 트립 | 방향 | 용도 |
+|---|---|---|---|
+| Day 1 | #1 | 등교 (구로→성균관대) | train |
+| Day 1 | #2 | 하교 (성균관대→구로) | train |
+| Day 2 | #3 | 등교 | train |
+| Day 2 | #4 | 하교 | **test (격리)** |
+| Day 3 | (backup) | — | 실패 시 makeup |
+
+**Data split**
+- Train (3 trips): 클래스당 raw 3 → 증강 15× → 45 + Path 1 30 = **클래스당 75 effective**
+- Test (1 trip, 증강 금지): 클래스당 1 sample, 13 stations × 1 = test 13개
+
+**트립 실패 정의 (재시도 필요)**
+- 마크 누락 ≥ 50% (6역 이상)
+- audio.wav LSB 분포 unique < 10 (결선 불안정)
+- 전체 RMS > 5000 (사실상 클리핑)
+
+매 트립 출발 전 사전 검증(실내 RMS 20~50) 통과 시 실패율 ~0.
 
 ## 핵심 기술 결정 사항
 
