@@ -66,3 +66,6 @@ desktop.ini
 # 기타
 *.log
 *.tmp
+
+# Windows 단축아이콘 (하드코딩된 로컬 경로 포함)
+*.lnk

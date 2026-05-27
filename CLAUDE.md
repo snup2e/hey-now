@@ -116,6 +116,7 @@ imsisul/
     ├── verify_pipeline.py         ← KWS+CNN 통합 파이프라인 로컬 검증
     ├── path2_capture_ui.py        ← Path 2 USB-CDC 캡처 + 마킹 Tkinter UI
     ├── path2_slice.py             ← long.wav + marks → 역별 클립 + 메타데이터
+    ├── path2_recheck.py           ← 트립 후 마크 후보정 GUI (matplotlib 파형, 클릭=재생, 휠 줌/스크롤바, suspect 자동 줌)
     └── README_path2.md            ← 친구용 실차 녹음 단계별 가이드
 ```
 
@@ -132,7 +133,7 @@ imsisul/
 | Path 2 — 수집 도구 | 캡처 UI(등교/하교 picker · dBFS 레벨미터 · 왕복 segment) + 슬라이서 | ✅ 완료 |
 | Path 2 — 수집 하드웨어 | ICS-43434 빵판 결선 + LCD F-F 직결 (LCD 모듈은 불량) | ✅ 결선 완료 |
 | Path 2 — 수집 펌웨어 | I2S2 circular DMA → USART2 921600 raw 16-bit PCM 스트림 | ✅ 완료, 보드 플래시됨 |
-| Path 2 — 실차 녹음 | 친구 통학 **4 one-way** (2일 통학, 3 train + 1 test) | ⬜ 친구 진행 |
+| Path 2 — 실차 녹음 | 친구 통학 **4 one-way** (2일 통학, 3 train + 1 test) | 🟨 1/4 (Trip #1 등교 수신, 마크 후보정 대기) |
 | Path 2 — 재학습 + 시연 | 라이브 데이터 합쳐 재학습, 실차 시연 | ⬜ |
 
 ## 현재 진행 상황
@@ -146,12 +147,16 @@ imsisul/
 - [x] Path 2 하드웨어 결선 — ICS-43434는 **F-F로 NUCLEO 모르포 직결**(빵판 폐기, 빵판이 실차 진동에 약함이 확인됨), LCD F-F 직결(모듈 응답 없음, 보류)
 - [x] Path 2 수집 펌웨어 (`E:\STM32CubeIDE\workspace\bringup`) — I2S2 circular DMA → USART2 921600 raw 16-bit mono PCM. 보드에 플래시 완료
 - [x] Path 2 캡처 UI 개선 — 등교/하교 picker, dBFS 레벨미터(peak hold 포함), 스크롤 13역, ↻ 방향 전환(왕복 segment), 짝수 바이트 정렬 보장
+- [x] Path 2 Trip #1 수신 — 2026-05-27 06:54 등교 (구로→성균관대, 35.8min). 오디오 품질 클린 (RMS 237, peak 4102/32768, 클리핑 0, LSB 256/256). 13/13 마크 모두 찍힘 — 단 금천구청·관악·안양 3개는 친구가 늦게 탭해서 sample_index가 실제 안내방송 시점과 어긋남 (LIS로 자동 검출됨)
+- [x] `scripts/path2_recheck.py` — 트립 후 마크 후보정 GUI. matplotlib FigureCanvasTkAgg 파형(8000 bucket envelope) + 시작 시 파일 피커 + 좌클릭 즉시 재생 + 마우스 휠 줌(커서 중심) + 수평 스크롤바 + suspect로 점프 시 search window로 자동 줌. `p`로 2초 미리듣기, Space로 spinbox 윈도우 재생, Enter로 sample_index 갱신, .bak 자동 백업 후 저장. `Path2 Recheck.lnk` + `hey_now.ico`로 콘솔 없이 더블클릭 실행 가능 (pythonw + messagebox 크래시 다이얼로그).
+- [x] Tk Treeview `<<TreeviewSelect>>` 가상 이벤트가 비동기 큐잉이라 `_suppress_select` sync 플래그로 막을 수 없는 무한 재귀 이슈 발견·수정 — `_refresh_table` 안의 `delete()+selection_set()`이 매 호출마다 이벤트 2개씩 큐에 쌓고, 그게 처리될 때 `_select → _refresh_table` 재진입으로 `update_idletasks()`가 영원히 큐를 비우지 못함. `_on_table_select`에서 `idx == self.selected_idx`면 일찍 빠지는 가드로 해결.
 
 ### 남은 일
 - [ ] 친구 노트북에 repo clone(또는 ZIP) + pyserial 설치 → COM 포트 확인
 - [ ] 친구 보드(NUCLEO-F411RE)에서 Path 1 펌웨어 빌드·플래시·테스트
 - [ ] Path 1 LCD: ST7789V 다른 조각으로 교체 시도 또는 UART 폴백 유지
-- [ ] Path 2 실차 녹음 — 친구 통학 **4 one-way (2일)** → `scripts/README_path2.md`의 4-트립 plan 참조
+- [ ] **Trip #1 마크 후보정** — `python scripts/path2_recheck.py`로 금천구청·관악·안양 sample_index 보정 → `marks (1).json` 패치 → 트립 폴더로 이동
+- [ ] Path 2 실차 녹음 — 남은 3 트립 (Day 1 하교, Day 2 등교/하교) → `scripts/README_path2.md`의 4-트립 plan 참조
 - [ ] Path 2 재학습 (라이브 + Seoul Metro 합산, 13-class) → 실차 시연
 
 ## Path 2 데이터 수집 계획 (4 one-way trip 기준)
@@ -160,13 +165,13 @@ imsisul/
 
 **2일 통학 일정**
 
-| Day | 트립 | 방향 | 용도 |
-|---|---|---|---|
-| Day 1 | #1 | 등교 (구로→성균관대) | train |
-| Day 1 | #2 | 하교 (성균관대→구로) | train |
-| Day 2 | #3 | 등교 | train |
-| Day 2 | #4 | 하교 | **test (격리)** |
-| Day 3 | (backup) | — | 실패 시 makeup |
+| Day | 트립 | 방향 | 용도 | 상태 |
+|---|---|---|---|---|
+| Day 1 | #1 | 등교 (구로→성균관대) | train | ✅ 2026-05-27 수신 — 오디오 클린, 마크 3개(금천/관악/안양) 후보정 필요 |
+| Day 1 | #2 | 하교 (성균관대→구로) | train | ⬜ |
+| Day 2 | #3 | 등교 | train | ⬜ |
+| Day 2 | #4 | 하교 | **test (격리)** | ⬜ |
+| Day 3 | (backup) | — | 실패 시 makeup | ⬜ |
 
 **Data split**
 - Train (3 trips): 클래스당 raw 3 → 증강 15× → 45 + Path 1 30 = **클래스당 75 effective**
@@ -176,6 +181,12 @@ imsisul/
 - 마크 누락 ≥ 50% (6역 이상)
 - audio.wav LSB 분포 unique < 10 (결선 불안정)
 - 전체 RMS > 5000 (사실상 클리핑)
+- 늦은 탭(out-of-order) ≥ 6역 — `scripts/path2_recheck.py`로 후보정 가능한 수준이 5역 이하여야 train으로 사용
+
+**탭 누락/늦은 탭 후보정 — Trip #1에서 발견된 패턴**
+- 친구가 안내방송을 놓치고 다음 역 가서야 깨달은 뒤 스크롤 picker로 돌아가 늦게 탭하는 케이스. `marks.json`에는 station_idx와 sample_index가 어긋난 채 저장됨.
+- 검출: `sample_index`로 정렬한 station_idx 순서가 monotone 아니면 LIS-complement로 out-of-order 자동 표시 (`scripts/path2_recheck.py`의 `flag_out_of_order`).
+- 보정: 정상 마크 사이 시간 윈도우에서 안내방송 시작점을 청취 후 sample_index 패치.
 
 매 트립 출발 전 사전 검증(실내 RMS 20~50) 통과 시 실패율 ~0.
 
