@@ -316,11 +316,15 @@ Xk = (Xk - KMEAN) / KSTD
 Xtr, Xva, Ytr, Yva = train_test_split(Xk, Yk, test_size=0.15, stratify=Yk, random_state=42)
 P.set_seeds(0)
 kws = P.small_cnn(Xk.shape[1:], 2)
-kws.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+# lr=5e-4 (not 1e-3) + more epochs/patience: the 2-class KWS collapses to a ~0.4
+# constant output (val ~58%) on some folds at lr=1e-3. build_kws also keeps
+# spec_aug=False (masking erases the short "이번역은" token -> label noise).
+kws.compile(optimizer=tf.keras.optimizers.Adam(5e-4),
+            loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 w = compute_class_weight('balanced', classes=np.array([0, 1]), y=Ytr)
-kws.fit(Xtr, Ytr, validation_data=(Xva, Yva), epochs=40, batch_size=64,
+kws.fit(Xtr, Ytr, validation_data=(Xva, Yva), epochs=60, batch_size=64,
         class_weight={0: w[0], 1: w[1]}, verbose=2,
-        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=8, restore_best_weights=True)])
+        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=12, restore_best_weights=True)])
 kb = to_int8_tflite(kws, Xtr, 'kws.tflite')
 print(f"kws.tflite: {len(kb)/1024:.1f} KB | KMEAN {KMEAN:.2f} KSTD {KSTD:.2f}")
 """),

@@ -1,0 +1,9 @@
+Path 2 평가 — 재생한 live 음원 & 결과 (트립단위 LOO)
+============================================================
+20260527_0654_등교  (등교) — held-out live audio: data/raw/line1_live/20260527_0654_등교/audio.wav, 12 announcements; per-mark 5/12 (42%), sequence 12/12 (100%)
+20260528_0642_등교  (등교) — held-out live audio: data/raw/line1_live/20260528_0642_등교/audio.wav, 12 announcements; per-mark 8/12 (67%), sequence 12/12 (100%)
+20260527_1431_하교  (하교) — held-out live audio: data/raw/line1_live/20260527_1431_하교/audio.wav, 12 announcements; per-mark 3/12 (25%), sequence 12/12 (100%)
+20260528_2118_하교  (하교) — held-out live audio: data/raw/line1_live/20260528_2118_하교/audio.wav, 12 announcements; per-mark 0/12 (0%), sequence 0/12 (0%)
+
+per-mark LOO: 16/48 (33%)
+sequence  LOO: 36/48 (75%)

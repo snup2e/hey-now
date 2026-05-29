@@ -369,7 +369,8 @@ def _synth(clip: np.ndarray, segs: list[np.ndarray], rng: np.random.Generator,
 def build_kws(clean: list[CleanSource], trips: list[LiveTrip], rng,
               n_synth_pos: int = 24, n_synth_neg: int = 10,
               use_real_pos: bool = True,
-              snr=(0.0, 25.0), reverb_p: float = 0.0, cmn: bool = USE_CMN):
+              snr=(0.0, 25.0), reverb_p: float = 0.0, cmn: bool = USE_CMN,
+              spec_aug: bool = False):
     """KWS dataset. label 1 = "이번역은" (1st calling) present, 0 = not.
 
     Negatives draw on real train-noise segments, which already contain the
@@ -377,18 +378,25 @@ def build_kws(clean: list[CleanSource], trips: list[LiveTrip], rng,
     The 2nd "이번역" of transfer/express stations sits inside the +-guard (not in
     the noise pool) and is handled at inference by the post-trigger cooldown,
     not trained as a negative (too close acoustically to the real trigger).
+
+    spec_aug=False by default: SpecAugment time/freq masking on a 1 s window
+    often erases the short "이번역은" token, turning positives into label noise
+    and collapsing the detector (measured: val 69%, ~0.4 constant output, 0
+    cross-trip dets). The trigger needs its signal intact; noise/SNR augmentation
+    already gives robustness.
     """
     segs = [s for t in trips for s in t.noise_segs]
     X, Y = [], []
+    aug = (lambda m: spec_augment(m, rng)) if spec_aug else (lambda m: m)
 
     for src in clean:
         pos, neg = src.kws_pos(), src.kws_neg()
         for _ in range(n_synth_pos):
             for w in make_windows(pos, KWS_WIN, 0.25):
-                X.append(spec_augment(_synth(w, segs, rng, snr, reverb_p, cmn), rng)); Y.append(1)
+                X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(1)
         for _ in range(n_synth_neg):
             for w in make_windows(neg, KWS_WIN, 0.5):
-                X.append(spec_augment(_synth(w, segs, rng, snr, reverb_p, cmn), rng)); Y.append(0)
+                X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(0)
 
     kw = int(KWS_WIN * SR)
     if use_real_pos:

@@ -79,7 +79,10 @@ def normalise(X):
     return (X - m) / s, m, s
 
 
-def train(X, Y, n_cls, epochs, seed=0):
+def train(X, Y, n_cls, epochs, seed=0, lr=1e-3, patience=6):
+    # lr=1e-3 is unstable for the 2-class KWS (collapses to ~0.4 constant output
+    # on some folds/seeds, val ~58%); lr=5e-4 + more epochs/patience trains
+    # stably to val ~99%. Callers that hit the collapse should pass lr=5e-4.
     set_seeds(seed)
     Xn, m, s = normalise(X)
     from sklearn.model_selection import train_test_split
@@ -87,15 +90,15 @@ def train(X, Y, n_cls, epochs, seed=0):
     Xtr, Xva, Ytr, Yva = train_test_split(Xn, Y, test_size=0.15,
                                            stratify=Y, random_state=42)
     mdl = small_cnn(X.shape[1:], n_cls)
-    mdl.compile(optimizer="adam", loss="sparse_categorical_crossentropy",
-                metrics=["accuracy"])
+    mdl.compile(optimizer=tf.keras.optimizers.Adam(lr),
+                loss="sparse_categorical_crossentropy", metrics=["accuracy"])
     classes = np.unique(Ytr)
     w = compute_class_weight("balanced", classes=classes, y=Ytr)
     cw = {int(c): float(wi) for c, wi in zip(classes, w)}
     mdl.fit(Xtr, Ytr, validation_data=(Xva, Yva), epochs=epochs, batch_size=64,
             class_weight=cw, verbose=0,
             callbacks=[tf.keras.callbacks.EarlyStopping(
-                monitor="val_accuracy", patience=6, restore_best_weights=True)])
+                monitor="val_accuracy", patience=patience, restore_best_weights=True)])
     _, acc = mdl.evaluate(Xva, Yva, verbose=0)
     return mdl, (m, s), acc
 

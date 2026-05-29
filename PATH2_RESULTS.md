@@ -62,8 +62,42 @@ PATH2_USE_CLEAN=0 PROTO_REAL_NOISE_AUG=4 \
   python scripts/path2_metric_poc.py               # real-only + aug 38%  (env: PROTO_USE_CLEAN)
 python scripts/path2_grl_poc.py                    # GRL λ 스윕 (trips_only 0.3 = 44%)
 python scripts/path2_rir_feasibility.py            # RIR 불가 근거 (CMN-EQ, clean≠live)
-python scripts/path2_seqprior_poc.py               # 시퀀스 prior 33→75%
+python scripts/path2_seqprior_poc.py               # 시퀀스 prior 33→75% (offset/Viterbi)
+python scripts/path2_count_poc.py                  # KWS 카운팅 vs 분류기 비교
+python scripts/path2_kws_recover.py                # KWS 검출 복구 LOO + 임계 스윕
+python scripts/path2_eval_report.py                # 평가 리포트(confusion·확률 히트맵) -> reports/path2_eval/
 python scripts/path2_export_clips.py               # 모든 자르기를 청취용 wav로 출력
 ```
 Colab 학습: `notebooks/path2_train.ipynb` (real-only + 강증강 + GRL → INT8 encoder + prototypes + meta).
 공유 데이터셋 빌더: `scripts/path2_dataset.py` (`build_metric_pool`에 `use_clean`/`real_noise_aug`/`spec_aug`/`jitter_s`).
+
+## 7. KWS 트리거 (Stage 1) 복구
+검출이 0이면 카운팅·분류기 둘 다 무용 → 복구가 선결. 원인 2개:
+- **SpecAugment가 positive 파괴**: 1초 윈도우 마스킹이 짧은 "이번역은"을 지워 라벨노이즈화 → 모델 붕괴(val 69%, 상수 0.4 출력, 0검출). → `build_kws(spec_aug=False)`.
+- **학습 불안정(LR 1e-3)**: 일부 fold 붕괴(val 58%). → `train(lr=5e-4, epochs↑, patience↑)`.
+
+복구 후 4 fold val 98~99%, 슬라이딩 검출 recall 48~79%(동작점별). 단 **잘 되는 채널(0654·2118)은 11~12/12** 발화(=예전 수준), 평균은 약체 채널(1431 1/12)이 끌어내림. 남은 한계 = **cross-trip 정밀도**(held-out 노이즈 오트리거, 채널 다양성 병목).
+
+## 8. KWS 카운팅 vs 분류기 (방식 비교, LOO 48마크)
+| 방식 | LOO |
+|---|---|
+| KWS 카운팅 — 완벽 검출 | **100%** |
+| KWS 카운팅 — 트리거 1개 누락(평균) | 46% (cascade) |
+| 메트릭 분류기 — per-mark | 33% |
+| 메트릭 분류기 + 시퀀스 prior | 75% |
+| **메트릭 분류기 + 시퀀스 + 탑승역 앵커** | **100%** |
+| 메트릭 분류기 + 시퀀스, 트리거 1개 누락(평균) | 55% |
+
+검출이 완벽하면 카운팅이 최강(100%)이나 검출오류 1개에 cascade(~46%). 분류기는 이름을 읽어 누락에 강건(55%>46%).
+
+## 9. 최종 아키텍처 & 다음 세션 계획
+**최종 = 탑승역 앵커 + KWS 카운팅(위치 추적) + 분류기(이름 교차검증·드리프트 감지) 하이브리드.**
+- 깨끗한 검출 + 앵커면 100%, 검출오류는 분류기가 안전장치로 흡수.
+- 분류기 보정력은 자기 정확도만큼 → cross-trip 정확도(채널 다양성)가 핵심 레버.
+
+**남은 배포 과제**: ① `encoder.tflite` 646KB > F411 512KB Flash → 인코더 축소, ② 시퀀스 디코드 온보드 통합(후처리, 비용 0), ③ KWS 오트리거 정밀도(채널 더 필요).
+
+**다음 세션 (데이터 10트립 시, 2026-06-05 예정)**:
+- 4트립 → **10트립**으로 LOO 재실행 (`path2_seqprior_poc.py`, `path2_kws_recover.py`, `path2_eval_report.py`). 채널 2.5배 → 분류기 per-mark·KWS 정밀도·약체 fold 감소 기대(단 3→4는 wash였으니 상승폭은 측정해봐야 함). 10-fold라 수치도 더 안정적.
+- 데이터 zip 재생성(`heynow_path2_data.zip`에 신규 트립 추가) → Colab 재학습.
+- 그 위에서 인코더 축소 + 시퀀스 디코드 온보드 통합 진행.

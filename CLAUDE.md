@@ -167,9 +167,9 @@ imsisul/
 - [x] (2026-05-28) **분류기 방향 전환: 13-class softmax → metric-learning(ProtoNet 임베딩+prototype)** — 아래 "Path 2 분류기 실험 기록" 참조. `path2_metric_poc.py`, `gen_path2_notebook.py`, `notebooks/path2_train.ipynb` 작성.
 
 ### 남은 일 / 미결정
-- [ ] **데모 프레이밍 결정 (Claude AI와 상의)** — 라이브 cross-trip 분류가 ~40%라 "현재역 표시"가 절반 틀림. 후보: (A) 학습 트립으로 시연(held-in 높음), (B) confidence-gated 표시(τ/δ abstain), (C) 트립 더 수집, (D) post-edit 영상, (E) 시퀀스 prior 재고(팀이 "짜친다"고 뺐으나 분류기 천장이 반론). KWS 카운트 방식은 팀 의견으로 제외.
+- [x] **데모 프레이밍 결정** — 최종 아키텍처 = **탑승역 앵커 + KWS 카운팅 + 분류기 교차검증 하이브리드**(상세 [PATH2_RESULTS.md](PATH2_RESULTS.md), 메모리 project-final-architecture). 분류기 단독은 cross-trip ~33% per-mark가 천장이라, 노선 단조성(시퀀스 prior)+탑승역 앵커로 75~100% 달성. 카운팅은 검출 완벽시 100%지만 검출오류 1개에 cascade(~48%)라 분류기가 안전장치. 데이터(채널) 계속 수집이 90%대의 길. (이전 "KWS 카운트 제외"는 번복 — 정확도론 가장 강력)
 - [ ] `notebooks/path2_train.ipynb` Colab 실행 — episode 3000(미검증 레버) + INT8 `encoder.tflite`/`prototypes.npy`/`path2_meta.json` 산출. 데이터 zip(클린 wav + 4트립) Drive 업로드 필요. 로컬 변경 git push 선행.
-- [ ] KWS 트리거 재작성 회귀 복구 — build_kws 재작성 후 held-out 0 dets. 재작성 전 빌드는 cross-trip 11~13/13 검출됨 → 복구 가능. 분류 트리거에 필요(카운트엔 안 씀).
+- [x] KWS 트리거 회귀 복구 — 원인 2개: ① `build_kws`의 SpecAugment가 1초 윈도우의 짧은 "이번역은"을 마스킹해 positive를 라벨노이즈로 만듦(val 69%, 상수 0.4 출력, 0검출) → `spec_aug=False`(기본). ② `train` LR 1e-3가 불안정해 일부 fold 붕괴(val 58%) → `lr=5e-4`+epochs/patience↑. 복구 후 4 fold val 98~99%, 슬라이딩 검출 recall 48~79%(동작점별). **남은 한계=cross-trip 정밀도**: held-out 트립 노이즈에 오트리거 다수(고recall서 ~180), 1431은 채널 약발(1/12 peak). 채널(트립) 더 모으면 개선. `scripts/path2_kws_recover.py`로 재현.
 - [ ] `models/` Path 2 산출물 + `verify_pipeline.py`를 metric/CMN/13역으로 갱신, 펌웨어 `melspec.c`에 CMN 반영
 - [ ] 하교 시연용 온보드 통합 펌웨어 — bringup I2S 마이크 DMA + 추론(+CMN) + ST7789V LCD. 디스플레이 입수 후 친구 빌드
 - [ ] 친구 보드에서 Path 1 펌웨어 빌드·플래시·테스트 (별도 트랙)
