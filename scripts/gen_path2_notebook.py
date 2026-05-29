@@ -295,7 +295,8 @@ meta = {
               'grl_lambda': LAMBDA_GRL, 'episodes': MP.EPISODES},
     'prototypes': protos_q.tolist(),
 }
-json.dump(meta, open('path2_meta.json', 'w', ensure_ascii=False, indent=2))
+with open('path2_meta.json', 'w', encoding='utf-8') as f:
+    json.dump(meta, f, ensure_ascii=False, indent=2)
 print("saved path2_meta.json + prototypes.npy + encoder.tflite")
 """),
 
