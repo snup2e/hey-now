@@ -96,7 +96,8 @@ imsisul/
 │   └── sample/
 ├── notebooks/
 │   ├── path1_train.ipynb          ← KWS+CNN 학습 (Colab)
-│   └── path1_train_complete.ipynb ← 학습 실행 결과 보존본
+│   ├── path1_train_complete.ipynb ← 학습 실행 결과 보존본
+│   └── path2_train.ipynb          ← Path 2 metric-learning 인코더+prototype+KWS (Colab, gen_path2_notebook.py로 생성)
 ├── models/
 │   ├── kws.tflite                 ← "이번 역은" 트리거 (15.6KB)
 │   ├── cnn.tflite                 ← 역 분류 14역 (16.4KB)
@@ -116,7 +117,11 @@ imsisul/
     ├── verify_pipeline.py         ← KWS+CNN 통합 파이프라인 로컬 검증
     ├── path2_capture_ui.py        ← Path 2 USB-CDC 캡처 + 마킹 Tkinter UI
     ├── path2_slice.py             ← long.wav + marks → 역별 클립 + 메타데이터
-    ├── path2_recheck.py           ← 트립 후 마크 후보정 GUI (matplotlib 파형, 클릭=재생, 휠 줌/스크롤바, suspect 자동 줌)
+    ├── path2_recheck.py           ← 트립 후 마크 후보정 GUI (matplotlib 파형, 클릭=그 지점부터 재생, 휠 줌/스크롤바, suspect 자동 줌, A_train 기본폴더). 재생커서는 별도라 클릭 위치 고정
+    ├── path2_dataset.py           ← 공유 데이터셋 빌더 (CMN + 실노이즈 합성 + 라이브 윈도우). build_kws / build_cnn(13-class) / build_metric_pool(metric). 1차호명 [onset,+2.0s] 윈도우, 탑승역 drop
+    ├── path2_poc.py               ← 13-class softmax 로컬 LOO 검증 (시드 고정, class_weight, 1차호명 윈도우+20s 쿨다운)
+    ├── path2_metric_poc.py        ← metric-learning 로컬 LOO 검증 (ProtoNet 인코더+64d 임베딩+prototype 최근접, cross-source 에피소드)
+    ├── gen_path2_notebook.py      ← notebooks/path2_train.ipynb 생성기 (gen_notebook.py 컨벤션)
     └── README_path2.md            ← 친구용 실차 녹음 단계별 가이드
 ```
 
@@ -133,8 +138,9 @@ imsisul/
 | Path 2 — 수집 도구 | 캡처 UI(등교/하교 picker · dBFS 레벨미터 · 왕복 segment) + 슬라이서 | ✅ 완료 |
 | Path 2 — 수집 하드웨어 | ICS-43434 빵판 결선 + LCD F-F 직결 (LCD 모듈은 불량) | ✅ 결선 완료 |
 | Path 2 — 수집 펌웨어 | I2S2 circular DMA → USART2 921600 raw 16-bit PCM 스트림 | ✅ 완료, 보드 플래시됨 |
-| Path 2 — 실차 녹음 | 친구 통학 **4 one-way** (2일 통학, 3 train + 1 test) | 🟨 1/4 (Trip #1 등교 수신, 마크 후보정 대기) |
-| Path 2 — 재학습 + 시연 | 라이브 데이터 합쳐 재학습, 실차 시연 | ⬜ |
+| Path 2 — 실차 녹음 | 친구 통학 **4 one-way (2 등교 + 2 하교)** | ✅ 4트립 클린 수신·정밀마킹 완료 (0526하교 1개 클리핑 폐기). 0654등교·0642등교·1431하교·2118하교 |
+| Path 2 — 분류기 실험 | 라이브 cross-trip 역 분류 go/no-go | 🟥 **softmax 13-class 19% / ProtoNet metric 35~42% — 둘 다 사용가능(90%)에 못 닿음** (천장=실 채널 다양성, 트립 4개). 아래 "분류기 실험 기록" 참조 |
+| Path 2 — 재학습 + 시연 | metric-learning 인코더 Colab 학습 + INT8 tflite | 🟨 노트북(`path2_train.ipynb`) 완성. **데모 프레이밍 미정** (Claude AI와 상의 예정) |
 
 ## 현재 진행 상황
 
@@ -150,32 +156,60 @@ imsisul/
 - [x] Path 2 Trip #1 수신 — 2026-05-27 06:54 등교 (구로→성균관대, 35.8min). 오디오 품질 클린 (RMS 237, peak 4102/32768, 클리핑 0, LSB 256/256). 13/13 마크 모두 찍힘 — 단 금천구청·관악·안양 3개는 친구가 늦게 탭해서 sample_index가 실제 안내방송 시점과 어긋남 (LIS로 자동 검출됨)
 - [x] `scripts/path2_recheck.py` — 트립 후 마크 후보정 GUI. matplotlib FigureCanvasTkAgg 파형(8000 bucket envelope) + 시작 시 파일 피커 + 좌클릭 즉시 재생 + 마우스 휠 줌(커서 중심) + 수평 스크롤바 + suspect로 점프 시 search window로 자동 줌. `p`로 2초 미리듣기, Space로 spinbox 윈도우 재생, Enter로 sample_index 갱신, .bak 자동 백업 후 저장. `Path2 Recheck.lnk` + `hey_now.ico`로 콘솔 없이 더블클릭 실행 가능 (pythonw + messagebox 크래시 다이얼로그).
 - [x] Tk Treeview `<<TreeviewSelect>>` 가상 이벤트가 비동기 큐잉이라 `_suppress_select` sync 플래그로 막을 수 없는 무한 재귀 이슈 발견·수정 — `_refresh_table` 안의 `delete()+selection_set()`이 매 호출마다 이벤트 2개씩 큐에 쌓고, 그게 처리될 때 `_select → _refresh_table` 재진입으로 `update_idletasks()`가 영원히 큐를 비우지 못함. `_on_table_select`에서 `idx == self.selected_idx`면 일찍 빠지는 가드로 해결.
+- [x] (2026-05-28) Path 2 4트립 수신·정리 — `A_train/`의 audio×4 중 **0526 하교는 클리핑(RMS 18134, peak 32767, clip 6.8만)로 폐기**, 나머지 3개를 `data/raw/line1_live/<trip_id>/`(audio.wav+marks.json)로 배치. bringup 테스트 잡음 폴더는 `_bringup_test/`로 비파괴 이동.
+- [x] (2026-05-28) **로컬 검증으로 도메인 갭 진단** — 클린 14-class 모델은 라이브에서 트리거 **0개**(레벨정규화 후도 0). 원인은 목소리가 아니라 `power_to_db(ref=1.0)` 절대레벨 mismatch. **per-window CMN(채널 평균 정규화)** 적용 시 KWS val **97.7%**로 회복. → 학습·추론·펌웨어 melspec 모두에 CMN 반영 필요.
+- [x] (2026-05-28) **자동 마크 위치추적은 불가 확정** — 클린 템플릿 NCC / live↔live NCC / MFCC+CMVN+subseq-DTW / 트립 전체 글로벌 DTW 스캔 4가지 모두 실패(비용 landscape 평평, 정답 역이 안 뜸). 열차 잡음(RMS가 안내방송과 비슷)이 특징을 덮어 알고리즘이 구별 못 함(사람 귀는 분리). → **정밀 마킹은 recheck GUI에서 사람이 청취 후 수행**해야 함.
+- [x] (2026-05-28) `scripts/path2_dataset.py` (공유 데이터셋 빌더: CMN + 클린에 실 트레인노이즈 SNR 합성 + light reverb + 실 라이브 윈도우 + 트레인노이즈 negative), `scripts/path2_poc.py` (로컬 CPU 검증 — 합성/실데이터 조건 비교, held-out 트립 채점). tensorflow-cpu 2.21 로컬 설치.
+- [x] (2026-05-28) **4트립 정밀 마킹 완료** — `path2_recheck.py`로 0654등교·1431하교·0642등교·2118하교 각 13역 안내방송 onset 청취 후 정확히 지정. A_train→`data/raw/line1_live/`로 동기화(오디오 바이트 동일 확인). 4번째 트립(2118하교) 수신 → **등교 2 + 하교 2** 방향 균형.
+- [x] (2026-05-28) **탑승역 마크가 가짜임 발견** — 탑승역(등교 구로/하교 성대)은 이미 타고 있어 안내방송 미녹음인데, 캡처 UI에 13역이 다 있어 친구가 아무 데나 탭함. → 방향별로 탑승역 마크 drop(positive에서 제외, 노이즈로). clean 14-class가 라이브에서 구로로 붕괴했던 원인 중 하나(노이즈→구로 학습).
+- [x] (2026-05-28) **1차 호명 윈도우 확정** — 클린 음원 측정: 트리거 onset 기준 "이번역은"~[0,0.7]s, 본역명~[0.9,1.8]s. 분류 윈도우 = **[onset, +2.0s] 고정**("이번역은 [본역명]"만). 코레일 차량은 부역명(마리오아울렛/안양예술공원/성결대/한세대/한국교통대)이 붙지만 서울교통공사 클린 음원엔 없음 → 1차 호명만 써야 신호 일치. 환승/급행역의 2번째 "이번역"은 **20s 쿨다운**으로 무시.
+- [x] (2026-05-28) **path2_recheck.py 클릭 재생 버그 수정** — 클릭한 지점부터 재생(pre-roll 제거), 재생 커서를 편집 플레이헤드와 분리(클릭 위치 고정), 편집 중 마크엔 snap 안 함. 기본 폴더 A_train.
+- [x] (2026-05-28) **분류기 방향 전환: 13-class softmax → metric-learning(ProtoNet 임베딩+prototype)** — 아래 "Path 2 분류기 실험 기록" 참조. `path2_metric_poc.py`, `gen_path2_notebook.py`, `notebooks/path2_train.ipynb` 작성.
 
-### 남은 일
-- [ ] 친구 노트북에 repo clone(또는 ZIP) + pyserial 설치 → COM 포트 확인
-- [ ] 친구 보드(NUCLEO-F411RE)에서 Path 1 펌웨어 빌드·플래시·테스트
-- [ ] Path 1 LCD: ST7789V 다른 조각으로 교체 시도 또는 UART 폴백 유지
-- [ ] **Trip #1 마크 후보정** — `python scripts/path2_recheck.py`로 금천구청·관악·안양 sample_index 보정 → `marks (1).json` 패치 → 트립 폴더로 이동
-- [ ] Path 2 실차 녹음 — 남은 3 트립 (Day 1 하교, Day 2 등교/하교) → `scripts/README_path2.md`의 4-트립 plan 참조
-- [ ] Path 2 재학습 (라이브 + Seoul Metro 합산, 13-class) → 실차 시연
+### 남은 일 / 미결정
+- [ ] **데모 프레이밍 결정 (Claude AI와 상의)** — 라이브 cross-trip 분류가 ~40%라 "현재역 표시"가 절반 틀림. 후보: (A) 학습 트립으로 시연(held-in 높음), (B) confidence-gated 표시(τ/δ abstain), (C) 트립 더 수집, (D) post-edit 영상, (E) 시퀀스 prior 재고(팀이 "짜친다"고 뺐으나 분류기 천장이 반론). KWS 카운트 방식은 팀 의견으로 제외.
+- [ ] `notebooks/path2_train.ipynb` Colab 실행 — episode 3000(미검증 레버) + INT8 `encoder.tflite`/`prototypes.npy`/`path2_meta.json` 산출. 데이터 zip(클린 wav + 4트립) Drive 업로드 필요. 로컬 변경 git push 선행.
+- [ ] KWS 트리거 재작성 회귀 복구 — build_kws 재작성 후 held-out 0 dets. 재작성 전 빌드는 cross-trip 11~13/13 검출됨 → 복구 가능. 분류 트리거에 필요(카운트엔 안 씀).
+- [ ] `models/` Path 2 산출물 + `verify_pipeline.py`를 metric/CMN/13역으로 갱신, 펌웨어 `melspec.c`에 CMN 반영
+- [ ] 하교 시연용 온보드 통합 펌웨어 — bringup I2S 마이크 DMA + 추론(+CMN) + ST7789V LCD. 디스플레이 입수 후 친구 빌드
+- [ ] 친구 보드에서 Path 1 펌웨어 빌드·플래시·테스트 (별도 트랙)
 
 ## Path 2 데이터 수집 계획 (4 one-way trip 기준)
 
-지하철 객차는 enclosed acoustic 환경이고 안내방송은 KORAIL 동일 녹음음원의 반복 재생이라 트립간 variation이 작음. Sample-complexity 계산상 클래스당 effective ~75 이상이면 충분 (95%+ 정확도). Path 1 클린 음원이 클래스당 ~30 effective 기여, 따라서 Path 2 raw 3개/역 = train+aug 후 ~45/역 + Path 1 = ~75/역 충족.
+지하철 객차는 enclosed acoustic 환경이고 안내방송은 KORAIL 동일 녹음음원의 반복 재생이라 트립간 variation이 작음.
+
+> ⚠️ **사후 정정**: "클래스당 effective ~75면 95%+"라는 초기 sample-complexity 가정은 **틀렸음**. 트립간 variation이 작다는 전제가 깨짐 — 차량 PA·객차 음향·마이크 위치가 트립마다 달라 **cross-trip 일반화가 진짜 병목**이고, 트립을 3→4로 늘려도(샘플 증가) 정확도가 안 올랐다(35~42% 천장). 즉 필요한 건 샘플 수가 아니라 **채널(트립) 다양성**. 아래 "Path 2 분류기 실험 기록" 참조.
 
 **2일 통학 일정**
 
-| Day | 트립 | 방향 | 용도 | 상태 |
-|---|---|---|---|---|
-| Day 1 | #1 | 등교 (구로→성균관대) | train | ✅ 2026-05-27 수신 — 오디오 클린, 마크 3개(금천/관악/안양) 후보정 필요 |
-| Day 1 | #2 | 하교 (성균관대→구로) | train | ⬜ |
-| Day 2 | #3 | 등교 | train | ⬜ |
-| Day 2 | #4 | 하교 | **test (격리)** | ⬜ |
-| Day 3 | (backup) | — | 실패 시 makeup | ⬜ |
+실제 수집·정밀마킹 완료 트립 (방향 2 등교 + 2 하교, 0526 1개는 클리핑 폐기):
 
-**Data split**
-- Train (3 trips): 클래스당 raw 3 → 증강 15× → 45 + Path 1 30 = **클래스당 75 effective**
-- Test (1 trip, 증강 금지): 클래스당 1 sample, 13 stations × 1 = test 13개
+| 트립 (trip_id) | 방향 | 오디오 품질 | 마크 | 상태 |
+|---|---|---|---|---|
+| 20260526_1942_하교 | 하교 | **RMS 18134, clip 6.8만** | — | ❌ 클리핑 폐기 |
+| 20260527_0654_등교 | 등교 | 클린 RMS 237 | 13/13 정밀 | ✅ |
+| 20260527_1431_하교 | 하교 | 클린 RMS 330 | 13/13 정밀 | ✅ |
+| 20260528_0642_등교 | 등교 | 클린 RMS 228 | 13/13 정밀 | ✅ |
+| 20260528_2118_하교 | 하교 | 클린 RMS 226 | 13/13 정밀 | ✅ (4번째) |
+
+> 마크는 친구가 달리는 차에서 탭해 ±수초~수십초 부정확 → `path2_recheck.py`로 청취하며 정밀화 완료(자동화 4종 실패 확인). **각 트립의 탑승역 마크(등교 구로/하교 성대)는 가짜**(미녹음, 임의 탭) → 학습 시 drop. 종착역(등교 성대/하교 구로)은 실재. 트립이 곧 채널 1개라, **3→4트립으로 늘려도 cross-trip 분류 정확도는 안 올랐음**(아래 실험 기록).
+
+**평가 방식 — 트립단위 LOO (정직)**
+- 4트립 중 1개를 held-out(미학습=새 채널), 나머지 3개 + 클린으로 학습 → held-out 채점. 4 fold 평균.
+- held-in val(같은 분포)은 높게 나오지만 **판단 기준은 held-out**(새 트립). 시드 고정으로 run간 요동 제거.
+- 학습 데이터 = 클린 1차호명 + 실 트립 노이즈 합성 + 실 라이브 1차호명 윈도우. 증강은 노이즈/SNR(reverb는 wash).
+
+**월요일(2026-06-01) 라이브 추론 계획 — 등교=노트북 모니터, 하교=온보드 LCD**
+
+> ⚠️ 이 계획은 13-class 시절 작성. 분류기가 cross-trip ~40%라 **데모 프레이밍은 재검토 중**(Claude AI와 상의). 아래 하드웨어/펌웨어 분리 로직(등교=노트북 저위험, 하교=온보드)은 유효.
+
+리스크를 등교 트립에서 0으로 두기 위해 **추론 위치를 트립별로 분리**:
+
+- **등교 (오전, 저위험)**: 검증된 **bringup 펌웨어 그대로**(PCM만 USB-UART 스트리밍) → 노트북이 PCM 수신, **재학습 13-class 모델로 노트북에서 실시간 추론**(지난역/현재역 출력) + **raw PCM 동시 저장**(재학습용). 펌웨어 통합 리스크 0. "디스플레이 없이 노트북 모니터링"과 일치.
+- **학교에서 디스플레이 인수** → 온보드 통합 펌웨어 빌드/플래시.
+- **하교 (오후, 시연영상)**: **온보드 통합 펌웨어**(bringup I2S 마이크 DMA + app_path1 추론+CMN + ST7789V LCD)로 보드 단독 동작 촬영. 동시에 PCM 백업 저장.
+
+> 등교에서 멀티플렉스(PCM+결정 동시 펌웨어 출력) 대신 **노트북측 추론**을 쓰는 이유: 같은 UX를 펌웨어 무변경으로 얻어 트립 날릴 위험 제거. offline post-edit(트립 audio를 `verify_pipeline.py`에 흘려 결정 추출→영상 오버레이)도 백업으로 항상 가능.
 
 **트립 실패 정의 (재시도 필요)**
 - 마크 누락 ≥ 50% (6역 이상)
@@ -211,6 +245,40 @@ imsisul/
 - 트리거 임계 0.6, **연속 3윈도우 디바운스**로 오검출 차단
 - 트리거 확정 시 시작점 +1.5초부터 2초를 CNN에 입력
 - CNN confidence < 0.5 → 분류 보류
+
+**Path 2 (라이브) — Stage 2를 metric learning으로 전환** (2026-05-28)
+- Stage 1 KWS는 동일(트리거 검출). **Stage 2는 13-class softmax 폐기 → 인코더+prototype**.
+- **인코더**: 작은 Conv2D + **Flatten**(GAP 금지 — 짧은 본역명 토큰을 시간평균이 뭉갬) → 64-d L2-정규화 임베딩. log-mel(40)+**per-window CMN** 입력.
+- **학습**: Prototypical Network(episodic). 같은 역(다른 노이즈/채널)=양성, 다른 역=음성. 에피소드의 support/query를 **다른 소스(synth↔real, real-tripA↔tripB)**에서 뽑아 채널 불변 유도.
+- **추론**: 역당 prototype 1개(클린 임베딩 평균) 저장 → 입력 임베딩의 **최근접 prototype**. cosine < τ 또는 top1−top2 < δ 면 보류(abstain).
+- **윈도우**: 분류 입력 = "이번역은 [본역명]" [트리거 onset, +2.0s]. 부역명/2차 안내 제외(코레일 부역명은 클린에 없음). 환승역 2번째 "이번역"은 20s 쿨다운으로 무시.
+- **CMN은 학습·추론·펌웨어 melspec 모두 동일 적용 필수**(클린 모델이 라이브 0 트리거였던 절대레벨 mismatch 제거).
+
+### Path 2 분류기 실험 기록 (cross-trip go/no-go)
+
+문제: **학습 안 한 트립(=새 채널)에서 역을 맞히는가.** 시드 고정 + 트립단위 leave-one-out(LOO)으로 정직하게 채점. chance=8%(1/13), 사용가능 목표 ~90%.
+
+| 접근 | cross-trip LOO | 비고 |
+|---|---|---|
+| 13-class softmax (GlobalAvgPool) | **19%** | 한 클래스로 붕괴. GAP가 본역명 토큰을 평균내 뭉갬(held-in val 11%) |
+| 13-class softmax (Flatten) | ~19% | held-in val 76%로 회복했으나 cross-trip은 여전히 붕괴 |
+| **ProtoNet metric (3트립)** | **42%** | 붕괴 안 함(예측 분산). 2-stage·CMN 유지 |
+| ProtoNet metric (4트립) | 35% | **4번째 트립 추가해도 안 오름** → 병목=데이터 양 아님 |
+| ProtoNet + reverb 채널증강 | 35% | wash. 합성 reverb는 실 채널차 못 흉내 |
+| CMVN / EQ 증강 | 도움 없음 | 정적 EQ는 CMN이 이미 제거 |
+| PCEN front-end | 10%→33% | ❌ 패배. CMN이 정적 EQ를 이미 제거해 PCEN 무의미(스케일 보정해도 baseline 미달) |
+| **채널 적대 GRL (trips-only, λ=0.3)** | **44%** | ✅ 최고 모델 레버. 임베딩서 채널축 제거, 도메인 헤드는 학습 전용→온보드 비용 0 |
+| 실 RIR 보간 증강 | 불가 | clean≠live(다른 녹음, envelope 상관 0.25)→deconvolution 입출력쌍 없음 |
+| episode 600→2000 | 44→46% | wash. 천장은 compute 아님 |
+| real-only + 실노이즈 증강 | 38% | clean 빼고 real만+증강이 clean-synth(35%)보다 나음. 모든 positive가 cross-trip |
+| **+ 시퀀스 prior (노선 단조성)** | **75%** | ✅✅ 돌파. 3/4 트립 100%. 후처리(Viterbi/offset)라 온보드 비용 0 |
+
+**진단/결론** (상세: [PATH2_RESULTS.md](PATH2_RESULTS.md)):
+- **모델 레버 천장 ≈ 42~44%**(채널 4개 한계). PCEN 패배, 실 RIR 불가, episode wash 모두 확인 → 병목은 compute가 아니라 **실 채널(트립) 수**. GRL(채널 적대)이 최고 모델 레버(44%, 온보드 0), real-only+증강이 clean-synth보다 나음(38%>35%).
+- **돌파구 = 시퀀스 prior**: 열차는 노선을 한 방향 단조 이동(방향 알려짐)이라 연속 안내방송=연속 역. per-mark cosine을 emission, 노선 위상을 transition으로 한 Viterbi/연속-런 디코딩이 **per-mark 33~42% → 75%(3/4 트립 100%)**. 데이터 누수 아닌 실제 물리 제약. 후처리라 **온보드 비용 0**. 90%는 트립 몇 개 더 모으면 도달.
+- 핵심 통찰: 안내방송은 KORAIL 단일 녹음의 결정론적 재생(고정 신호). 변하는 건 노이즈(합성 가능) + **채널(실 트립 수만큼만)**. **CMN 필수**(없으면 라이브 0 트리거)이고 그 CMN이 정적 EQ를 지워 EQ/PCEN/RIR 증강을 무력화. **자동 마크 위치추적 불가**(NCC/DTW 4종 실패) → 정밀 마킹은 사람 청취.
+- 기록 위치(시드 고정 로컬 재현): `path2_metric_poc.py`(metric/real-only LOO), `path2_grl_poc.py`(GRL), `path2_rir_feasibility.py`(RIR 불가 근거), `path2_seqprior_poc.py`(시퀀스 prior), `path2_export_clips.py`(자르기 청취용 wav).
+- ⚠️ 배포 블로커: `encoder.tflite` 646KB(Flatten→Dense 61만 weight) > F411 Flash 512KB → 인코더 축소 필요. KWS(15.7KB)·시퀀스 디코드(후처리)는 문제 없음.
 
 ### 신호 처리
 - 샘플링: 16kHz

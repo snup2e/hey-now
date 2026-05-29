@@ -39,10 +39,12 @@ env/
 # 데이터셋 (용량 큼)
 data/raw/
 data/processed/
+A_train/
 *.wav
 *.mp3
 *.npy
 *.npz
+*.zip
 !sample/*.wav
 
 # 모델 산출물 (대용량)

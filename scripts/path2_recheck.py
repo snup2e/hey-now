@@ -9,9 +9,9 @@ raw Tk Canvas — Canvas rendering came up blank in our env, matplotlib
 is mature and known-good.
 
 Controls:
-  Click waveform     → seek playhead (or snap to a nearby mark)
+  Click waveform     → place playhead there & play from there (snaps to other marks)
   Click a table row  → select that station, seek to its mark
-  Space              → play / stop window around playhead
+  Space              → play / stop window from playhead (cursor stays put)
   ← / →              → nudge playhead 0.2s
   Shift + ← / →      → nudge 1.0s
   Enter              → set selected mark's sample_index to playhead
@@ -52,6 +52,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parent.parent
 LIVE = ROOT / "data" / "raw" / "line1_live"
+A_TRAIN = ROOT / "A_train"  # raw trip audio + marks being hand-corrected
 ENV_BUCKETS = 8000  # waveform downsample target; high enough to stay smooth when zoomed in
 
 
@@ -102,8 +103,8 @@ def find_marks_for(audio_path: Path) -> Path | None:
 
 def pick_audio_via_dialog() -> Path | None:
     """Open a file picker. Returns selected audio path, or None on cancel."""
-    # Prefer the live-trip directory if it exists, else repo root.
-    initial = LIVE if LIVE.exists() else ROOT
+    # Prefer the hand-marking A_train dir, then the live-trip dir, else repo root.
+    initial = A_TRAIN if A_TRAIN.exists() else (LIVE if LIVE.exists() else ROOT)
     # Use a hidden Tk root so the dialog can render; mainloop hasn't started.
     chooser = tk.Tk()
     chooser.withdraw()
@@ -364,6 +365,10 @@ class App:
 
         self.playhead_line = ax.axvline(0, color="#ff8a00", lw=1.2,
                                         linestyle="--", alpha=0.9)
+        # Separate transient cursor that animates during playback, so the edit
+        # playhead (above) stays exactly where the user clicked / nudged it.
+        self.playback_line = ax.axvline(0, color="#46c8ff", lw=1.0, alpha=0.85)
+        self.playback_line.set_visible(False)
         self.fig.subplots_adjust(left=0.04, right=0.99, top=0.92, bottom=0.20)
         self.fig_canvas.draw_idle()
 
@@ -431,6 +436,10 @@ class App:
         snap_idx = None
         snap_dx_px = 8
         for m in self.marks:
+            # Don't snap to the mark you're currently editing — clicking near it
+            # must reposition freely, not jump back to its old spot.
+            if m["station_idx"] == self.selected_idx:
+                continue
             mx_s = m["sample_index"] / self.sr
             mx_px, _ = self.ax.transData.transform((mx_s, 0))
             d = abs(evt.x - mx_px)
@@ -508,6 +517,18 @@ class App:
         self.playhead = max(0, min(len(self.pcm) - 1, sample))
         self._update_playhead_only()
 
+    def _set_playback_cursor(self, sample: int):
+        """Move the transient playback cursor (does NOT touch the edit playhead)."""
+        s = sample / self.sr
+        self.playback_line.set_xdata([s, s])
+        self.playback_line.set_visible(True)
+        self.fig_canvas.draw_idle()
+
+    def _hide_playback_cursor(self):
+        if self.playback_line.get_visible():
+            self.playback_line.set_visible(False)
+            self.fig_canvas.draw_idle()
+
     def _update_playhead_only(self):
         s = self.playhead / self.sr
         self.playhead_line.set_xdata([s, s])
@@ -528,7 +549,7 @@ class App:
         except ValueError:
             pass
         n = int(self.window_s * self.sr)
-        start = max(0, self.playhead - n // 4)  # 25% pre / 75% post bias
+        start = self.playhead  # play from exactly where the user clicked, no pre-roll
         end = min(len(self.pcm), start + n)
         self._play_range(start, end)
 
@@ -571,13 +592,14 @@ class App:
 
     def _tick_playhead(self):
         if not self.playing:
+            self._hide_playback_cursor()
             return
         elapsed = time.monotonic() - self._play_anchor_time
         new_head = self._play_anchor_sample + int(elapsed * self.sr)
         if new_head >= self._play_end_sample:
-            self._set_playhead(self._play_end_sample)
+            self._hide_playback_cursor()
             return
-        self._set_playhead(new_head)
+        self._set_playback_cursor(new_head)
         self.root.after(self.TICK_MS, self._tick_playhead)
 
     def _playback_done(self):
@@ -586,6 +608,7 @@ class App:
     def stop_play(self):
         winsound.PlaySound(None, 0)
         self.playing = False
+        self._hide_playback_cursor()
         self._cleanup_temp()
 
     def _cleanup_temp(self):
