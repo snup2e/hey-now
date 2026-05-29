@@ -368,7 +368,8 @@ def _synth(clip: np.ndarray, segs: list[np.ndarray], rng: np.random.Generator,
 
 def build_kws(clean: list[CleanSource], trips: list[LiveTrip], rng,
               n_synth_pos: int = 24, n_synth_neg: int = 10,
-              use_real_pos: bool = True,
+              use_real_pos: bool = True, use_synth: bool = True,
+              real_pos_aug: int = 0, neg_ratio: float = 1.0,
               snr=(0.0, 25.0), reverb_p: float = 0.0, cmn: bool = USE_CMN,
               spec_aug: bool = False):
     """KWS dataset. label 1 = "이번역은" (1st calling) present, 0 = not.
@@ -389,14 +390,22 @@ def build_kws(clean: list[CleanSource], trips: list[LiveTrip], rng,
     X, Y = [], []
     aug = (lambda m: spec_augment(m, rng)) if spec_aug else (lambda m: m)
 
-    for src in clean:
-        pos, neg = src.kws_pos(), src.kws_neg()
-        for _ in range(n_synth_pos):
-            for w in make_windows(pos, KWS_WIN, 0.25):
-                X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(1)
-        for _ in range(n_synth_neg):
-            for w in make_windows(neg, KWS_WIN, 0.5):
-                X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(0)
+    # use_synth=False -> real-only positives (drop the 서울교통공사 clean "이번역은",
+    # a DIFFERENT recording from the 코레일 live PA -- same clean!=live mismatch
+    # that made the classifier real-only; with synth on, ~90% of positives are the
+    # wrong recording, so the KWS learns a fuzzy "announcement voice" and fires on
+    # chatter/door/KTX cross-trip). real_pos_aug>0 then expands the few real
+    # positives with extra real-noise mixes. neg_ratio scales negatives vs
+    # positives (>1 = more hard non-keyword negatives for the chatter problem).
+    if use_synth:
+        for src in clean:
+            pos, neg = src.kws_pos(), src.kws_neg()
+            for _ in range(n_synth_pos):
+                for w in make_windows(pos, KWS_WIN, 0.25):
+                    X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(1)
+            for _ in range(n_synth_neg):
+                for w in make_windows(neg, KWS_WIN, 0.5):
+                    X.append(aug(_synth(w, segs, rng, snr, reverb_p, cmn))); Y.append(0)
 
     kw = int(KWS_WIN * SR)
     if use_real_pos:
@@ -405,11 +414,15 @@ def build_kws(clean: list[CleanSource], trips: list[LiveTrip], rng,
                 span = t.y[max(0, idx - int(0.3 * SR)): idx + int(1.3 * SR)]
                 for w in make_windows(span, KWS_WIN, 0.25):
                     X.append(to_logmel(w, cmn)); Y.append(1)
+                    for _ in range(real_pos_aug):
+                        yn = add_noise_snr(w, sample_noise(segs, len(w), rng),
+                                           rng.uniform(*snr))
+                        X.append(to_logmel(yn, cmn)); Y.append(1)
 
-    # Balance: draw as many real-noise negatives as we have positives so far.
+    # Balance: draw neg_ratio x (positives) real-noise negatives total.
     n_pos = int(np.sum(Y))
     n_neg = len(Y) - n_pos
-    for _ in range(max(0, n_pos - n_neg)):
+    for _ in range(max(0, int(neg_ratio * n_pos) - n_neg)):
         X.append(to_logmel(sample_noise(segs, kw, rng), cmn)); Y.append(0)
 
     X = np.asarray(X, np.float32)[..., None]
