@@ -20,7 +20,8 @@ Controls:
   Click waveform      → place playhead there & play from there
   Click near an event → select it (for delete / re-seek)
   o                   → add 열림 (door open) at playhead
-  c                   → add 닫힘 (door close / departure) at playhead
+  c                   → add 닫힘=차임 (출발 삐리리 chime onset) at playhead
+  t                   → add 탁 (door-close clunk, the mechanical thunk) at playhead
   Delete / x          → delete selected event
   Space               → play / stop window from playhead
   p                   → 2 s preview from playhead
@@ -67,9 +68,11 @@ ROOT = Path(__file__).resolve().parent.parent
 LIVE = ROOT / "data" / "raw" / "line1_live"
 A_TRAIN = ROOT / "A_train"   # raw trip audio being hand-marked (same default as recheck)
 
-OPEN, CLOSE = "open", "close"
-TYPE_KR = {OPEN: "열림", CLOSE: "닫힘"}
-TYPE_COLOR = {OPEN: "#46c8ff", CLOSE: "#ff8a00"}   # open=cyan, close=orange
+OPEN, CLOSE, CLUNK = "open", "close", "clunk"
+TYPE_KR = {OPEN: "열림", CLOSE: "닫힘", CLUNK: "탁"}
+# open=cyan, close(차임)=orange, clunk(탁)=green
+TYPE_COLOR = {OPEN: "#46c8ff", CLOSE: "#ff8a00", CLUNK: "#5cff7a"}
+LABEL_CHAR = {OPEN: "O", CLOSE: "C", CLUNK: "T"}
 
 
 # ---------- input resolution ----------
@@ -172,7 +175,7 @@ class App:
             return []
         out = []
         for i, e in enumerate(data.get("events", [])):
-            if e.get("type") in (OPEN, CLOSE) and "sample_index" in e:
+            if e.get("type") in (OPEN, CLOSE, CLUNK) and "sample_index" in e:
                 out.append({"id": i + 1, "type": e["type"],
                             "sample_index": int(e["sample_index"])})
         return sorted(out, key=lambda e: e["sample_index"])
@@ -235,6 +238,7 @@ class App:
         sb.pack(side="left", fill="y"); self.tree.configure(yscrollcommand=sb.set)
         self.tree.tag_configure("open", background="#10303a", foreground="#bfe9ff")
         self.tree.tag_configure("close", background="#3a2a10", foreground="#ffd9a0")
+        self.tree.tag_configure("clunk", background="#103a18", foreground="#bfffce")
         self.tree.tag_configure("sel", background="#3a3a14", foreground="#fff2a8")
 
         right = tk.Frame(body); right.pack(side="left", fill="both", expand=True,
@@ -244,8 +248,10 @@ class App:
         row = tk.Frame(ctl); row.pack(fill="x", padx=6, pady=4)
         tk.Button(row, text="＋ 열림 (o)", width=12, bg="#103040",
                   command=lambda: self.add_event(OPEN)).pack(side="left")
-        tk.Button(row, text="＋ 닫힘/출발 (c)", width=14, bg="#3a2a10",
+        tk.Button(row, text="＋ 닫힘=차임 (c)", width=14, bg="#3a2a10",
                   command=lambda: self.add_event(CLOSE)).pack(side="left", padx=4)
+        tk.Button(row, text="＋ 탁 (t)", width=10, bg="#103a18",
+                  command=lambda: self.add_event(CLUNK)).pack(side="left", padx=4)
         tk.Button(row, text="🗑 삭제 (Del)", width=12,
                   command=self.delete_selected).pack(side="left", padx=4)
 
@@ -286,6 +292,7 @@ class App:
         self.root.bind("<space>", lambda e: self.toggle_play())
         self.root.bind("o", lambda e: self.add_event(OPEN))
         self.root.bind("c", lambda e: self.add_event(CLOSE))
+        self.root.bind("t", lambda e: self.add_event(CLUNK))
         self.root.bind("p", lambda e: self.preview())
         self.root.bind("<Delete>", lambda e: self.delete_selected())
         self.root.bind("x", lambda e: self.delete_selected())
@@ -300,8 +307,9 @@ class App:
     def _header_text(self) -> str:
         n_open = sum(1 for e in self.events if e["type"] == OPEN)
         n_close = sum(1 for e in self.events if e["type"] == CLOSE)
+        n_clunk = sum(1 for e in self.events if e["type"] == CLUNK)
         return (f"Audio: {self.audio_path.name}   Dur: {self.total_s:.0f}s   "
-                f"열림: {n_open}   닫힘: {n_close}   "
+                f"열림: {n_open}   닫힘(차임): {n_close}   탁: {n_clunk}   "
                 f"(이번역은 refs: {len(self.ann_marks)})   → {self.out_path.name}")
 
     # ---- plot ----
@@ -349,8 +357,7 @@ class App:
             color = "#fff2a8" if sel else TYPE_COLOR[e["type"]]
             lw = 2.2 if sel else 1.4
             ln = self.ax.axvline(x, color=color, lw=lw, alpha=0.95)
-            txt = self.ax.text(x, self._label_y,
-                               ("O" if e["type"] == OPEN else "C"),
+            txt = self.ax.text(x, self._label_y, LABEL_CHAR[e["type"]],
                                color=color, fontsize=9, fontweight="bold",
                                ha="center", va="bottom")
             self._event_artists += [ln, txt]

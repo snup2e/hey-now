@@ -1,0 +1,122 @@
+{
+  "trip_id": "audio (7)",
+  "audio_file": "audio (7).wav",
+  "sample_rate": 16000,
+  "events": [
+    {
+      "type": "close",
+      "sample_index": 443152,
+      "elapsed_s": 27.697
+    },
+    {
+      "type": "open",
+      "sample_index": 5155570,
+      "elapsed_s": 322.223
+    },
+    {
+      "type": "close",
+      "sample_index": 5453037,
+      "elapsed_s": 340.815
+    },
+    {
+      "type": "open",
+      "sample_index": 8420961,
+      "elapsed_s": 526.31
+    },
+    {
+      "type": "close",
+      "sample_index": 8646358,
+      "elapsed_s": 540.397
+    },
+    {
+      "type": "open",
+      "sample_index": 10446100,
+      "elapsed_s": 652.881
+    },
+    {
+      "type": "close",
+      "sample_index": 10699927,
+      "elapsed_s": 668.745
+    },
+    {
+      "type": "open",
+      "sample_index": 13479785,
+      "elapsed_s": 842.487
+    },
+    {
+      "type": "close",
+      "sample_index": 13808618,
+      "elapsed_s": 863.039
+    },
+    {
+      "type": "open",
+      "sample_index": 15893237,
+      "elapsed_s": 993.327
+    },
+    {
+      "type": "close",
+      "sample_index": 16576584,
+      "elapsed_s": 1036.036
+    },
+    {
+      "type": "open",
+      "sample_index": 19016311,
+      "elapsed_s": 1188.519
+    },
+    {
+      "type": "close",
+      "sample_index": 19250056,
+      "elapsed_s": 1203.129
+    },
+    {
+      "type": "open",
+      "sample_index": 21520074,
+      "elapsed_s": 1345.005
+    },
+    {
+      "type": "close",
+      "sample_index": 21732353,
+      "elapsed_s": 1358.272
+    },
+    {
+      "type": "open",
+      "sample_index": 23564388,
+      "elapsed_s": 1472.774
+    },
+    {
+      "type": "close",
+      "sample_index": 24763490,
+      "elapsed_s": 1547.718
+    },
+    {
+      "type": "open",
+      "sample_index": 27223370,
+      "elapsed_s": 1701.461
+    },
+    {
+      "type": "close",
+      "sample_index": 27454730,
+      "elapsed_s": 1715.921
+    },
+    {
+      "type": "open",
+      "sample_index": 29256315,
+      "elapsed_s": 1828.52
+    },
+    {
+      "type": "close",
+      "sample_index": 29441164,
+      "elapsed_s": 1840.073
+    },
+    {
+      "type": "open",
+      "sample_index": 31908581,
+      "elapsed_s": 1994.286
+    },
+    {
+      "type": "close",
+      "sample_index": 32162599,
+      "elapsed_s": 2010.162
+    }
+  ]
+}

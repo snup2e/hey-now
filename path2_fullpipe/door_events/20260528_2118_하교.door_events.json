@@ -1,0 +1,107 @@
+{
+  "trip_id": "audio (4)",
+  "audio_file": "audio (4).wav",
+  "sample_rate": 16000,
+  "events": [
+    {
+      "type": "open",
+      "sample_index": 1116645,
+      "elapsed_s": 69.79
+    },
+    {
+      "type": "close",
+      "sample_index": 1308193,
+      "elapsed_s": 81.762
+    },
+    {
+      "type": "open",
+      "sample_index": 5558419,
+      "elapsed_s": 347.401
+    },
+    {
+      "type": "close",
+      "sample_index": 5721802,
+      "elapsed_s": 357.613
+    },
+    {
+      "type": "open",
+      "sample_index": 7365195,
+      "elapsed_s": 460.325
+    },
+    {
+      "type": "close",
+      "sample_index": 7570319,
+      "elapsed_s": 473.145
+    },
+    {
+      "type": "open",
+      "sample_index": 9886880,
+      "elapsed_s": 617.93
+    },
+    {
+      "type": "close",
+      "sample_index": 10415191,
+      "elapsed_s": 650.949
+    },
+    {
+      "type": "open",
+      "sample_index": 15019012,
+      "elapsed_s": 938.688
+    },
+    {
+      "type": "close",
+      "sample_index": 15215787,
+      "elapsed_s": 950.987
+    },
+    {
+      "type": "open",
+      "sample_index": 18199809,
+      "elapsed_s": 1137.488
+    },
+    {
+      "type": "close",
+      "sample_index": 18475295,
+      "elapsed_s": 1154.706
+    },
+    {
+      "type": "open",
+      "sample_index": 20622560,
+      "elapsed_s": 1288.91
+    },
+    {
+      "type": "close",
+      "sample_index": 21016110,
+      "elapsed_s": 1313.507
+    },
+    {
+      "type": "open",
+      "sample_index": 23548614,
+      "elapsed_s": 1471.788
+    },
+    {
+      "type": "close",
+      "sample_index": 23748967,
+      "elapsed_s": 1484.31
+    },
+    {
+      "type": "open",
+      "sample_index": 25475909,
+      "elapsed_s": 1592.244
+    },
+    {
+      "type": "close",
+      "sample_index": 25729928,
+      "elapsed_s": 1608.12
+    },
+    {
+      "type": "open",
+      "sample_index": 28010289,
+      "elapsed_s": 1750.643
+    },
+    {
+      "type": "close",
+      "sample_index": 28809315,
+      "elapsed_s": 1800.582
+    }
+  ]
+}

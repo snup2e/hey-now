@@ -2,6 +2,28 @@
 
 이 문서는 Claude Code가 이 저장소에서 작업할 때 참고하는 프로젝트 컨텍스트입니다.
 
+## ⚠️ 작업 규칙 (가장 중요 — 항상 먼저 적용)
+
+1. **임의로 정의/결정하지 말 것.** 코드·실험에 들어가는 설계 결정(게이트 방식, 알고리즘 구조,
+   파라미터·임계값·윈도우, 새 용어·개념 도입 등)은 Claude가 혼자 정하지 말고 **먼저 사용자에게
+   물어보고 승인받은 뒤** 진행한다. 불가피하게 새 개념이 필요하면 코드에 박지 말고 "제안"으로
+   분리해 질문으로 올린다.
+2. **물리 가정(특히 타이밍)을 하드코딩 금지.** 정차시간·역간 간격·방송↔이벤트 시간차 같은 값은
+   실차에서 급행·지연으로 **변동**한다(§11에서 cadence 기준은 이미 폐기). 절대/상대 시간 윈도우에
+   의존하는 규칙은 기본적으로 쓰지 말고, 꼭 필요하면 사용자 확인을 받는다.
+3. 기존에 검증된 용어·방법을 우선 사용한다. 모르면 추측 말고 묻는다.
+4. **로컬 실험이 ~10분 넘게 걸릴 것 같으면 로컬에서 돌리지 말고 Colab GPU로 돌린다.**
+   사용자는 **Colab Pro** 사용 중. 무거운 학습·LOO(특히 인코더·다fold)는 노트북/셀로 만들어
+   Colab GPU에서 실행하게 하고, 로컬은 빠른 스모크/단위검증(≤10분)에만 쓴다.
+5. **Colab 노트북을 만들거나 줄 때는 "무엇을 어디서 어디로 올리는지"를 항상 표로 명시한다.**
+   열 = `올릴 파일 / 로컬 위치(절대경로) / Colab·Drive 업로드 위치 / 용도`. 노트북 README(또는
+   노트북 첫 셀)에 이 표를 넣고, 셀에서 고쳐야 할 경로(예: `PKG`,`DATA_ZIP`)도 함께 적는다.
+6. **모든 실험은 실차 실시간(스트리밍) 추론을 전제로 만든다.** 예측이 GT를 입력으로 쓰면 안 됨 —
+   안내 위치/시각·역 개수(12개)·역 순서를 *미리 알고 깔아두는* 실험(예: 안내 GT 위치에서 분류→
+   순서대로 박기)은 **금지**. 검출(KWS·차임)부터 스스로 하고, 과거 정보만으로 causal하게 위치를
+   내야 한다. GT는 *채점에만* 쓴다(예측 입력 아님). "ceiling/상한" 같은 비실시간 수치는 보고하지
+   않는다.
+
 ## 프로젝트 개요
 
 - **과목**: 임베디드시스템설계 (성균관대학교)
@@ -118,6 +140,7 @@ imsisul/
     ├── path2_capture_ui.py        ← Path 2 USB-CDC 캡처 + 마킹 Tkinter UI
     ├── path2_slice.py             ← long.wav + marks → 역별 클립 + 메타데이터
     ├── path2_recheck.py           ← 트립 후 마크 후보정 GUI (matplotlib 파형, 클릭=그 지점부터 재생, 휠 줌/스크롤바, suspect 자동 줌, A_train 기본폴더). 재생커서는 별도라 클릭 위치 고정
+    ├── path2_kws_inspect.py       ← KWS 점검 뷰어 (read-only). --build로 LOO held-out 검출 캐시(reports/kws_inspect/) → GUI에 마크·트리거 TP/FP·KWS 확률곡선·CMN before/after 스펙트로그램. 런처 Path2 KWS Inspect.lnk + kws_inspect.ico. 상세 PATH2_RESULTS §12-O
     ├── path2_dataset.py           ← 공유 데이터셋 빌더 (CMN + 실노이즈 합성 + 라이브 윈도우). build_kws / build_cnn(13-class) / build_metric_pool(metric). 1차호명 [onset,+2.0s] 윈도우, 탑승역 drop
     ├── path2_poc.py               ← 13-class softmax 로컬 LOO 검증 (시드 고정, class_weight, 1차호명 윈도우+20s 쿨다운)
     ├── path2_metric_poc.py        ← metric-learning 로컬 LOO 검증 (ProtoNet 인코더+64d 임베딩+prototype 최근접, cross-source 에피소드)
@@ -169,7 +192,7 @@ imsisul/
 ### 남은 일 / 미결정
 - [x] **데모 프레이밍 결정** — 최종 아키텍처 = **탑승역 앵커 + KWS 카운팅 + 분류기 교차검증 하이브리드**(상세 [PATH2_RESULTS.md](PATH2_RESULTS.md), 메모리 project-final-architecture). 분류기 단독은 cross-trip ~33% per-mark가 천장이라, 노선 단조성(시퀀스 prior)+탑승역 앵커로 75~100% 달성. 카운팅은 검출 완벽시 100%지만 검출오류 1개에 cascade(~48%)라 분류기가 안전장치. 데이터(채널) 계속 수집이 90%대의 길. (이전 "KWS 카운트 제외"는 번복 — 정확도론 가장 강력)
 - [ ] `notebooks/path2_train.ipynb` Colab 실행 — episode 3000(미검증 레버) + INT8 `encoder.tflite`/`prototypes.npy`/`path2_meta.json` 산출. 데이터 zip(클린 wav + 4트립) Drive 업로드 필요. 로컬 변경 git push 선행.
-- [x] KWS 트리거 회귀 복구 — 원인 2개: ① `build_kws`의 SpecAugment가 1초 윈도우의 짧은 "이번역은"을 마스킹해 positive를 라벨노이즈로 만듦(val 69%, 상수 0.4 출력, 0검출) → `spec_aug=False`(기본). ② `train` LR 1e-3가 불안정해 일부 fold 붕괴(val 58%) → `lr=5e-4`+epochs/patience↑. 복구 후 4 fold val 98~99%, 슬라이딩 검출 recall 48~79%(동작점별). **남은 한계=cross-trip 정밀도**: held-out 트립 노이즈에 오트리거 다수(고recall서 ~180), 1431은 채널 약발(1/12 peak). 채널(트립) 더 모으면 개선. `scripts/path2_kws_recover.py`로 재현.
+- [x] KWS 트리거 회귀 복구 — 원인 2개: ① `build_kws`의 SpecAugment가 1초 윈도우의 짧은 "이번역은"을 마스킹해 positive를 라벨노이즈로 만듦(val 69%, 상수 0.4 출력, 0검출) → `spec_aug=False`(기본). ② `train` LR 1e-3가 불안정해 일부 fold 붕괴(val 58%) → `lr=5e-4`+epochs/patience↑. 복구 후 4 fold val 98~99%, 슬라이딩 검출 recall 48~79%(동작점별). **남은 한계=cross-trip 정밀도(false 과다)**: held-out 트립 노이즈에 오트리거 다수(8트립 고recall서 ~56/trip), 1431은 채널 약발. `scripts/path2_kws_recover.py`로 재현. **(2026-06-04) KWS false 단독억제 카드 3장 다 패배** — 매치드필터(PATH2_RESULTS §12-L)·hard-neg mining(§12-M: recall 75→58%)·고정구문 prototype 게이트(§12-N: real-FP AUC 0.45<chance)·front-end(CMN이 정적EQ 이미 제거). 공통원인=false가 "음성 vs 음성"+채널변이. → false는 **단독억제 아니라 교차게이트(KWS∧차임)·시퀀스로 흡수**가 본류. 잔여 카드=prototype 정렬탐색(§12-N, 대기). 근본레버=트립(채널) 수.
 - [ ] `models/` Path 2 산출물 + `verify_pipeline.py`를 metric/CMN/13역으로 갱신, 펌웨어 `melspec.c`에 CMN 반영
 - [ ] 하교 시연용 온보드 통합 펌웨어 — bringup I2S 마이크 DMA + 추론(+CMN) + ST7789V LCD. 디스플레이 입수 후 친구 빌드
 - [ ] 친구 보드에서 Path 1 펌웨어 빌드·플래시·테스트 (별도 트랙)

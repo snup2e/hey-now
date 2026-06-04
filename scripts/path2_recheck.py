@@ -264,6 +264,9 @@ class App:
             self.tree.column(c, width=w, anchor=anchor)
         self.tree.pack(side="left", fill="y")
         self.tree.bind("<<TreeviewSelect>>", self._on_table_select)
+        # Double-click a station row → scroll/zoom the waveform to that mark
+        # and play it (like doormark's "next"). Single click still just seeks.
+        self.tree.bind("<Double-1>", self._on_table_double_click)
         sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
         sb.pack(side="left", fill="y")
         self.tree.configure(yscrollcommand=sb.set)
@@ -426,6 +429,40 @@ class App:
         m = next((mk for mk in self.marks if mk["station_idx"] == idx), None)
         if m:
             self._select(idx, m["sample_index"])
+
+    def _on_table_double_click(self, _evt):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        idx = int(sel[0])
+        m = next((mk for mk in self.marks if mk["station_idx"] == idx), None)
+        if m:
+            self.focus_mark(idx, m["sample_index"])
+
+    def focus_mark(self, idx: int, sample: int):
+        """Select a mark, scroll/zoom the waveform onto it, and play from there."""
+        self._select(idx, sample)
+        self._center_view_on(sample)
+        self.play_window()
+
+    # Where the mark sits within the focused view (0=left .. 1=right). The
+    # friend taps AFTER hearing "이번역은", so the announcement precedes the
+    # mark — keep the mark right-of-center so the preceding audio is visible.
+    FOCUS_WIDTH_S = 14.0
+    FOCUS_MARK_POS = 0.7
+
+    def _center_view_on(self, sample: int):
+        """Pan (and zoom if showing the whole trip) so `sample` sits
+        right-of-center, leaving the preceding announcement audio in view."""
+        s = sample / self.sr
+        xlim = self.ax.get_xlim()
+        width = xlim[1] - xlim[0]
+        if width > 20.0:  # whole-trip view → zoom into a focused window
+            width = self.FOCUS_WIDTH_S
+        left = max(0.0, s - width * self.FOCUS_MARK_POS)
+        right = min(self.total_s, left + width)
+        left = max(0.0, right - width)
+        self._apply_xlim(left, right)
 
     # ---- plot interaction ----
     def _on_plot_click(self, evt):

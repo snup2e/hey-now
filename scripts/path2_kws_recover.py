@@ -25,8 +25,10 @@ import path2_dataset as D
 import path2_poc as P
 
 LIVE_DIR = P.LIVE_DIR
-TRIPS = ["20260527_0654_등교", "20260528_0642_등교",
-         "20260527_1431_하교", "20260528_2118_하교"]
+# All synced live trips (8 as of 2026-06: 4 등교 + 4 하교). Globbed so new trips
+# are picked up automatically once synced into data/raw/line1_live/.
+TRIPS = sorted(d for d in os.listdir(LIVE_DIR)
+               if os.path.isdir(os.path.join(LIVE_DIR, d)) and not d.startswith("_"))
 COOLDOWN_S = 20.0
 MATCH_S = 10.0
 
