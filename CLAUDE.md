@@ -58,6 +58,7 @@
 |---|---|---|
 | MCU | STM32 F411RE Nucleo | Cortex-M4 @ 100MHz, 512KB Flash, 128KB SRAM, FPU 있음 |
 | 마이크 | ICS43434 (I2S MEMS) | **Path 1에서는 미사용** — 보드 저장 음원을 직접 처리. Path 2에서 사용 |
+| 가속도계 | ADXL (키트 보유, 모델 확인 예정) | **Path 2 신규** — 열차 정차/주행 검출 = 주(主) 카운트. 학습 대상 아님(임계 기반 신호처리). I2C/SPI 결선 TBD. 과제로 사용 경험 있음 |
 | 출력 디스플레이 | 2.0" SPI LCD | "지난 역 / 현재 역" 표시. 패널 모델 확정 전까지 펌웨어는 UART(시리얼) 출력으로 대체 |
 | 오디오 출력 | MAX98357A (I2S DAC + Class-D Amp) | 보유 중. 활용 여부 TBD (백업·비상 알람용) |
 | 스피커 | 4Ω 3W 40mm 라운드 | MAX98357A 직결 |
@@ -109,6 +110,11 @@ imsisul/
 ├── docs/                  ← HTML 발표자료 (GitHub Pages: snup2e.github.io/hey-now)
 │   ├── index.html
 │   └── img/
+├── 최종발표/               ← 최종발표 HTML 덱(완성, 9장+Q&A). **상세 = 최종발표/README.md** (순서·배포·테마·문구정책)
+│   ├── index.html / README.md / demo.mp4 / PretendardVariable.woff2
+│   ├── Hey_now_최종발표.pdf       ← 캡처 PDF(12p, ?shot→Pillow). PPT 대용 배포본
+│   ├── 발표대본.md               ← 7분 대본(슬라이드별·2인 분할·핵심 의사결정 ★8·9)
+│   └── figures/ (architecture.png[사용자그림]·labeling.png[마킹GUI]·collect_00~09.jpg[카톡]·alert_preview.png)
 ├── data/
 │   ├── raw/seoul_metro/   ← (gitignore) Path 1 안내방송 mp3
 │   ├── raw/line1_live/    ← (gitignore) Path 2 트립별 audio.wav + marks.json
@@ -119,7 +125,7 @@ imsisul/
 ├── notebooks/
 │   ├── path1_train.ipynb          ← KWS+CNN 학습 (Colab)
 │   ├── path1_train_complete.ipynb ← 학습 실행 결과 보존본
-│   └── path2_train.ipynb          ← Path 2 metric-learning 인코더+prototype+KWS (Colab, gen_path2_notebook.py로 생성)
+│   └── path2_train.ipynb          ← (폐기) Path 2 metric-learning 인코더+KWS Colab 노트북. 현행=차임 검출 LOO + 가속도계 카운팅
 ├── models/
 │   ├── kws.tflite                 ← "이번 역은" 트리거 (15.6KB)
 │   ├── cnn.tflite                 ← 역 분류 14역 (16.4KB)
@@ -141,11 +147,12 @@ imsisul/
     ├── path2_slice.py             ← long.wav + marks → 역별 클립 + 메타데이터
     ├── path2_recheck.py           ← 트립 후 마크 후보정 GUI (matplotlib 파형, 클릭=그 지점부터 재생, 휠 줌/스크롤바, suspect 자동 줌, A_train 기본폴더). 재생커서는 별도라 클릭 위치 고정
     ├── path2_kws_inspect.py       ← KWS 점검 뷰어 (read-only). --build로 LOO held-out 검출 캐시(reports/kws_inspect/) → GUI에 마크·트리거 TP/FP·KWS 확률곡선·CMN before/after 스펙트로그램. 런처 Path2 KWS Inspect.lnk + kws_inspect.ico. 상세 PATH2_RESULTS §12-O
-    ├── path2_dataset.py           ← 공유 데이터셋 빌더 (CMN + 실노이즈 합성 + 라이브 윈도우). build_kws / build_cnn(13-class) / build_metric_pool(metric). 1차호명 [onset,+2.0s] 윈도우, 탑승역 drop
-    ├── path2_poc.py               ← 13-class softmax 로컬 LOO 검증 (시드 고정, class_weight, 1차호명 윈도우+20s 쿨다운)
-    ├── path2_metric_poc.py        ← metric-learning 로컬 LOO 검증 (ProtoNet 인코더+64d 임베딩+prototype 최근접, cross-source 에피소드)
-    ├── gen_path2_notebook.py      ← notebooks/path2_train.ipynb 생성기 (gen_notebook.py 컨벤션)
+    ├── path2_dataset.py           ← 공유 데이터셋 빌더 (CMN + 실노이즈 합성 + 라이브 윈도우). 1차호명 [onset,+2.0s] 윈도우, 탑승역 drop
+    ├── path2_door_poc.py          ← **현행** 차임/문 검출 LOO (HPSS 하모닉 톤, win=3.0s, 트립단위). door-side 카운터 채점
+    ├── path2_recheck.py / path2_event_mark.py ← 마크·이벤트(차임) 정밀 마킹 GUI
+    ├── (폐기) path2_poc.py / path2_metric_poc.py / path2_grl_poc.py / path2_seqprior_poc.py / gen_path2_notebook.py ← 음향 분류기 실험(softmax·ProtoNet·GRL·시퀀스 prior). 기록은 PATH2_RESULTS §1~§12
     └── README_path2.md            ← 친구용 실차 녹음 단계별 가이드
+    # 차임+가속도계 카운팅 상세·실험 로그: PATH2_RESULTS.md (§11 door 이벤트, §12 차임 HPSS/융합)
 ```
 
 ## 진행 로드맵
@@ -161,9 +168,9 @@ imsisul/
 | Path 2 — 수집 도구 | 캡처 UI(등교/하교 picker · dBFS 레벨미터 · 왕복 segment) + 슬라이서 | ✅ 완료 |
 | Path 2 — 수집 하드웨어 | ICS-43434 빵판 결선 + LCD F-F 직결 (LCD 모듈은 불량) | ✅ 결선 완료 |
 | Path 2 — 수집 펌웨어 | I2S2 circular DMA → USART2 921600 raw 16-bit PCM 스트림 | ✅ 완료, 보드 플래시됨 |
-| Path 2 — 실차 녹음 | 친구 통학 **4 one-way (2 등교 + 2 하교)** | ✅ 4트립 클린 수신·정밀마킹 완료 (0526하교 1개 클리핑 폐기). 0654등교·0642등교·1431하교·2118하교 |
-| Path 2 — 분류기 실험 | 라이브 cross-trip 역 분류 go/no-go | 🟥 **softmax 13-class 19% / ProtoNet metric 35~42% — 둘 다 사용가능(90%)에 못 닿음** (천장=실 채널 다양성, 트립 4개). 아래 "분류기 실험 기록" 참조 |
-| Path 2 — 재학습 + 시연 | metric-learning 인코더 Colab 학습 + INT8 tflite | 🟨 노트북(`path2_train.ipynb`) 완성. **데모 프레이밍 미정** (Claude AI와 상의 예정) |
+| Path 2 — 실차 녹음 | 친구 통학 **8 one-way (4 등교 + 4 하교)** | ✅ 8트립 클린 수신·정밀마킹 완료 (0526하교 1개 클리핑 폐기). trip4(2118하교)만 차임 +4세미톤 변종 |
+| Path 2 — 음향 분류기(KWS·인코더) | 라이브 cross-trip 역 *이름* 분류 go/no-go | 🟥 **폐기.** softmax 13-class·ProtoNet 인코더·KWS 트리거 다 시도했으나 cross-trip 채널 천장으로 사용가능(90%) 미달. 상세 [PATH2_RESULTS.md](PATH2_RESULTS.md) → 차임+가속도계 카운팅으로 전환 |
+| Path 2 — 차임-only 온디바이스 검출 + 디스플레이 | 마이크 → 차임 CNN → "하차벨이 울립니다" | ✅ **온보드 검출 동작 확인 (2026-06-18).** 입력피딩 버그 해결(내부버퍼 기입+weights=NULL+win2.0s). LCD는 ILI9341/흰화면으로 보류 → **PC 디스플레이 앱**으로 시연, 발표는 시연영상. 상세 [PATH2_RESULTS.md](PATH2_RESULTS.md) §13 |
 
 ## 현재 진행 상황
 
@@ -190,18 +197,37 @@ imsisul/
 - [x] (2026-05-28) **분류기 방향 전환: 13-class softmax → metric-learning(ProtoNet 임베딩+prototype)** — 아래 "Path 2 분류기 실험 기록" 참조. `path2_metric_poc.py`, `gen_path2_notebook.py`, `notebooks/path2_train.ipynb` 작성.
 
 ### 남은 일 / 미결정
-- [x] **데모 프레이밍 결정** — 최종 아키텍처 = **탑승역 앵커 + KWS 카운팅 + 분류기 교차검증 하이브리드**(상세 [PATH2_RESULTS.md](PATH2_RESULTS.md), 메모리 project-final-architecture). 분류기 단독은 cross-trip ~33% per-mark가 천장이라, 노선 단조성(시퀀스 prior)+탑승역 앵커로 75~100% 달성. 카운팅은 검출 완벽시 100%지만 검출오류 1개에 cascade(~48%)라 분류기가 안전장치. 데이터(채널) 계속 수집이 90%대의 길. (이전 "KWS 카운트 제외"는 번복 — 정확도론 가장 강력)
-- [ ] `notebooks/path2_train.ipynb` Colab 실행 — episode 3000(미검증 레버) + INT8 `encoder.tflite`/`prototypes.npy`/`path2_meta.json` 산출. 데이터 zip(클린 wav + 4트립) Drive 업로드 필요. 로컬 변경 git push 선행.
-- [x] KWS 트리거 회귀 복구 — 원인 2개: ① `build_kws`의 SpecAugment가 1초 윈도우의 짧은 "이번역은"을 마스킹해 positive를 라벨노이즈로 만듦(val 69%, 상수 0.4 출력, 0검출) → `spec_aug=False`(기본). ② `train` LR 1e-3가 불안정해 일부 fold 붕괴(val 58%) → `lr=5e-4`+epochs/patience↑. 복구 후 4 fold val 98~99%, 슬라이딩 검출 recall 48~79%(동작점별). **남은 한계=cross-trip 정밀도(false 과다)**: held-out 트립 노이즈에 오트리거 다수(8트립 고recall서 ~56/trip), 1431은 채널 약발. `scripts/path2_kws_recover.py`로 재현. **(2026-06-04) KWS false 단독억제 카드 3장 다 패배** — 매치드필터(PATH2_RESULTS §12-L)·hard-neg mining(§12-M: recall 75→58%)·고정구문 prototype 게이트(§12-N: real-FP AUC 0.45<chance)·front-end(CMN이 정적EQ 이미 제거). 공통원인=false가 "음성 vs 음성"+채널변이. → false는 **단독억제 아니라 교차게이트(KWS∧차임)·시퀀스로 흡수**가 본류. 잔여 카드=prototype 정렬탐색(§12-N, 대기). 근본레버=트립(채널) 수.
-- [ ] `models/` Path 2 산출물 + `verify_pipeline.py`를 metric/CMN/13역으로 갱신, 펌웨어 `melspec.c`에 CMN 반영
-- [ ] 하교 시연용 온보드 통합 펌웨어 — bringup I2S 마이크 DMA + 추론(+CMN) + ST7789V LCD. 디스플레이 입수 후 친구 빌드
+- [x] **데모 아키텍처 2차 피벗 (2026-06-18)** — **가속도계 제거. 차임-only 온디바이스 검출 + 디스플레이.** 마이크 → 차임 CNN(plain logmel_cmn, HPSS 없음) → "하차벨이 울립니다" + 작게 예상역(저신뢰라 작게). 예상역 카운팅은 2단계. 상세 아래 "Path 2 온디바이스 차임 데모", [PATH2_RESULTS.md](PATH2_RESULTS.md) §13, 메모리 project-final-architecture.
+- [x] **차임 검출 모델·펌웨어 작성 완료** — `models/chime.tflite`(INT8, plain logmel_cmn), `firmware/`(melspec_stream·app_chime·chime_runner·chime_meta.h), bringup main.c 배선, PC 디스플레이 앱+런처, 폰 테스트 클립.
+- [x] ✅ **온보드 입력 피딩 버그 해결 (2026-06-18).** PC 0.99 vs 보드 50%로 *모델 vs 런타임*을 갈라 진단 → 원인은 외부 I/O가 아니라: ① **X-CUBE-AI가 입력/출력을 activation 버퍼 안에 할당**(allocate-inputs/outputs; `.ioc useInputAllocation=false`도 무시됨)이라 외부 `in[0].data`를 무시, ② `chime_runner.c`가 weights에 **테이블 주소**(`ai_chime_data_weights_get()`=`g_chime_weights_table`, blob 아님)를 넘겨 올바른 가중치 바인딩을 덮어써 출력이 상수 0.5. **해결 = ① 네트워크 내부 입력버퍼(`ai_chime_inputs_get()[0].data`)에 직접 기입+출력도 거기서 읽기, ② `ai_chime_create_and_init(net, act, NULL)`(weights=NULL → data_params_get의 올바른 바인딩 유지, Path1 방식).** win_s=2.0(126프레임) 재내보내 RAM 적합. selftest `const+2≠const−2` 확인, 차임 클립으로 **검출 동작 확인**.
+- [x] **차임 온보드 검출 동작 확인** — 마이크 → 차임 검출 → UART "하차벨이 울립니다" → PC 디스플레이 앱. 발표는 시연영상으로 진행.
+- [x] **LCD 보류 — 패널은 ILI9341 (ST7789 아님).** ILI9341 init 교체·CS 연속 트랜잭션(0x2C+픽셀 한 세션)·Mode0·390kHz·SWRESET까지 시도했으나 흰 화면 지속(모듈/배선 의심, SDO 없어 ID읽기 불가). **시연은 PC 디스플레이 앱으로 확정**, 온보드 LCD는 향후. bringup `app_config.h`의 `LCD_TEST_ONLY` 스위치=1로 색순환 테스트 가능(차임 AI 컴파일 제외).
+- [x] **최종발표 덱 (2026-06-18, 거의 완성)** — `최종발표/index.html` (Terra 종설 템플릿 기반 단일파일 HTML 덱, 민트-틸 테마, Pretendard 임베드, ?shot=N 캡처). **상세는 `최종발표/README.md`** (슬라이드 순서·자료·테마·문구정책 표). 순서: 문제정의→시스템 아키텍처→**데이터 수집·라벨링·분석**(한 섹션, 분석=역별 안내방송 개수 EDA 막대그래프)→**접근①+벽 병합 한 슬라이드**(좌=KWS+CNN 깨끗한 음원 성공, 우=실제 열차 벽 표)→방향전환(출발 신호음, confusion matrix TP74/FN5/FP72=recall94%)→시연(demo.mp4)→결론. **온디바이스 검증 슬라이드는 폐기.** architecture.png(사용자 직접 그림)·demo.mp4·카톡 수집사진·라벨링 GUI 다 삽입됨.
+  - **문구 정책(중요·재작업 금지):** 지적된 6개(디바운스·실차·cross-trip·결정론적 재생·트립·차임→출발 신호음)만 쉬운 말, **기본 기술용어(KWS·CNN·log-mel·CMN·INT8·ProtoNet·GRL·X-CUBE-AI·recall·LOO·도메인 갭)는 유지.** (한 번 과하게 풀었다가 원상복귀한 이력 — 다시 풀지 말 것.)
+  - 표지 입력 완료: **4조 · 팀원 김건형·차현비 · 지도교수 정조운**. 결론 = 한계 2개(하드웨어 STM32 제약·주제 난도) + 성과(차임 검출), 한계2/3 해결과정 행 제거. 성능표는 confusion matrix(검출은 TN="정상 기각" 라벨, 분류는 정확도).
+  - **배포 산출물 완료**: ① `최종발표/` 폴더째(상대경로 자산 7개 누락無), ② **캡처 PDF `최종발표/Hey_now_최종발표.pdf`**(12p, 2560×1440, `?shot=0..11` 헤드리스 크롬 PNG→Pillow 결합. 데모 10p는 PDF라 영상 대신 포스터→현장에서 demo.mp4 따로 재생. 덱 수정 시 재생성), ③ **`최종발표/발표대본.md`**(7분, 슬라이드별, 2인 분할 [A]1~7/[B]8~12, ★8·9가 핵심 의사결정). 상세 `최종발표/README.md`.
+- [ ] 차임 false 동작점 튜닝 (선택) — `PL.run_chime_threshold_sweep()`로 false~2-3/trip 임계를 `chime_meta.h` 상수에만 반영.
 - [ ] 친구 보드에서 Path 1 펌웨어 빌드·플래시·테스트 (별도 트랙)
 
-## Path 2 데이터 수집 계획 (4 one-way trip 기준)
+### Path 2 온디바이스 차임 데모 (2026-06-18, 온보드 검출 동작 확인)
+
+**데모 프로젝트 = `E:\STM32CubeIDE\workspace\bringup`** (Path 2 수집 펌웨어 베이스 — I2S2 24-bit 16kHz circular DMA 마이크 동작 중). 차임 데모로 개조함:
+- 마이크 PCM(왼쪽채널 hi-16bit = 학습 도메인) → `app_chime_feed` → 검출 시 UART로 "하차벨이 울립니다".
+- **펌웨어 파일**(`firmware/` 원본 → bringup `Core/{Inc,Src}`에 복사): `melspec_stream.c/h`(스트리밍 log-mel, **자체 FFT — CMSIS-DSP 불필요**, 188-col int16 링), `app_chime.c/h`(top_db→행CMN→/STD→추론→디바운스·쿨다운+진단 전역), `chime_runner.c/h`(X-CUBE-AI 10.x 래퍼, **in-activations 내부 IO 기입 + weights=NULL** — §13 해결), `chime_meta.h`(Colab 자동생성: 윈도우·정규화·임계), `mel_filterbank.h`(Path1 공유).
+- **X-CUBE-AI**: 네트워크 이름 `chime`, float I/O, "Not selected" 앱, **allocate-inputs/outputs(IO가 activation 안)**. `ai_chime_create_and_init(net, act_addr[], NULL)` — activations만 우리 버퍼, **weights=NULL**(내부 바인딩 유지; `ai_chime_data_weights_get()`는 *테이블 주소*라 넘기면 가중치 깨짐). IO는 `ai_chime_inputs_get()[0].data`/`outputs_get()[0].data`(=arena 내부)에 직접 기입·판독. (롱패스 레지스트리 `LongPathsEnabled=1` 켜야 stedgeai 동작.)
+- **진단**: main.c가 부팅 시 `[boot] ai_type/code`, `[selftest] const+2/−2`, 1초마다 `[dbg] half/eval/fill/p%/run/feat`. (selftest가 입력 피딩 정상 여부 판정 — 다르면 OK.)
+- **검증된 사실**: INT8 tflite는 PC에서 차임 0.99/주행 0.0(`run_chime_loo` logmel_cmn 81%/13.9fp@3s). 보드 알고리즘 파이썬 미러도 0.99. 자체 FFT = numpy와 1e-14 일치. **입력피딩은 내부버퍼 기입+weights=NULL+win2.0s로 해결 → 보드에서도 PC와 동일하게 검출 동작 확인.**
+- **PC 디스플레이**(시연/노트북 모니터, **온보드 LCD 대체**): `scripts/path2_chime_display.py`(**창모드 기본·F11 전체화면**, COM12 자동, P바 + **빨강 점멸 큰 알림**) + 더블클릭 `Hey now Display.lnk`(--fullscreen 제거됨). `[dbg] p=`·`하차벨이 울립니다` 줄만 파싱 → 펌웨어 변경 불필요. **시리얼 포트는 한 프로그램만** — 디버깅 땐 시리얼 모니터, 시연 땐 디스플레이 앱.
+- **폰 테스트 클립**: `data/processed/chime_test/`(chime_A/B = 잘 잡히는 트립, noise = 안 잡혀야 정상) + README.
+- 보드: **COM12**(ST-Link VCP), USART2 **921600**, 시리얼 인코딩 **UTF-8**.
+
+## Path 2 데이터 수집 계획 (오디오 8 one-way trip 수집 완료)
 
 지하철 객차는 enclosed acoustic 환경이고 안내방송은 KORAIL 동일 녹음음원의 반복 재생이라 트립간 variation이 작음.
 
-> ⚠️ **사후 정정**: "클래스당 effective ~75면 95%+"라는 초기 sample-complexity 가정은 **틀렸음**. 트립간 variation이 작다는 전제가 깨짐 — 차량 PA·객차 음향·마이크 위치가 트립마다 달라 **cross-trip 일반화가 진짜 병목**이고, 트립을 3→4로 늘려도(샘플 증가) 정확도가 안 올랐다(35~42% 천장). 즉 필요한 건 샘플 수가 아니라 **채널(트립) 다양성**. 아래 "Path 2 분류기 실험 기록" 참조.
+> ⚠️ **사후 정정**: "클래스당 effective ~75면 95%+"라는 초기 sample-complexity 가정은 **틀렸음**. 차량 PA·객차 음향·마이크 위치가 트립마다 달라 **cross-trip 일반화가 진짜 병목**이고, 트립을 4→8로 늘려도(샘플 증가) 역 이름 분류 정확도가 안 올랐다(~42% 천장). 즉 음향 분류는 샘플 수가 아니라 **채널(트립) 다양성**이 병목 → 분류 폐기·카운팅 선회(위 "음향 분류기 실험" 참조).
+
+> 📍 **가속도계 측정 트립은 1~2회만.** accel은 학습 대상이 아니라 임계 기반 신호처리라 트립 다수가 불필요 — stop-detection 임계·차임 시간정렬을 한두 번 트립으로 확인·튜닝하면 됨. (아래 오디오 8트립 표는 음향 분류기 실험 시절 수집분.)
 
 **2일 통학 일정**
 
@@ -213,26 +239,28 @@ imsisul/
 | 20260527_0654_등교 | 등교 | 클린 RMS 237 | 13/13 정밀 | ✅ |
 | 20260527_1431_하교 | 하교 | 클린 RMS 330 | 13/13 정밀 | ✅ |
 | 20260528_0642_등교 | 등교 | 클린 RMS 228 | 13/13 정밀 | ✅ |
-| 20260528_2118_하교 | 하교 | 클린 RMS 226 | 13/13 정밀 | ✅ (4번째) |
+| 20260528_2118_하교 | 하교 | 클린 RMS 226 | 13/13 정밀 | ✅ **차임 +4세미톤 변종(trip4)** |
+| 20260601_0654_등교 | 등교 | 클린 | 정밀 | ✅ |
+| 20260601_1431_하교 | 하교 | 클린 | 정밀 | ✅ |
+| 20260602_0653_등교 | 등교 | 클린 | 정밀 | ✅ |
+| 20260602_1259_하교 | 하교 | 클린 | 정밀 | ✅ |
 
-> 마크는 친구가 달리는 차에서 탭해 ±수초~수십초 부정확 → `path2_recheck.py`로 청취하며 정밀화 완료(자동화 4종 실패 확인). **각 트립의 탑승역 마크(등교 구로/하교 성대)는 가짜**(미녹음, 임의 탭) → 학습 시 drop. 종착역(등교 성대/하교 구로)은 실재. 트립이 곧 채널 1개라, **3→4트립으로 늘려도 cross-trip 분류 정확도는 안 올랐음**(아래 실험 기록).
+> 마크는 친구가 달리는 차에서 탭해 ±수초~수십초 부정확 → `path2_recheck.py`로 청취하며 정밀화 완료(자동화 4종 실패 확인). **각 트립의 탑승역 마크(등교 구로/하교 성대)는 가짜**(미녹음, 임의 탭) → drop. 종착역(등교 성대/하교 구로)은 실재. 트립이 곧 채널 1개라, **4→8트립으로 늘려도 cross-trip 역 이름 분류 정확도는 안 올랐음** → 분류 폐기, 차임+가속도계 카운팅으로 전환.
 
 **평가 방식 — 트립단위 LOO (정직)**
-- 4트립 중 1개를 held-out(미학습=새 채널), 나머지 3개 + 클린으로 학습 → held-out 채점. 4 fold 평균.
-- held-in val(같은 분포)은 높게 나오지만 **판단 기준은 held-out**(새 트립). 시드 고정으로 run간 요동 제거.
-- 학습 데이터 = 클린 1차호명 + 실 트립 노이즈 합성 + 실 라이브 1차호명 윈도우. 증강은 노이즈/SNR(reverb는 wash).
+- 8트립 중 1개를 held-out(미학습=새 채널), 나머지로 학습 → held-out 채점. fold 평균. 시드 고정으로 run간 요동 제거.
+- held-in val(같은 분포)은 높게 나오지만 **판단 기준은 held-out**(새 트립). 차임 검출도 동일 LOO로 채점(94%/10.3fp = trip4 변종 제외 7트립).
+- 차임 검출 학습 데이터 = 실 트립 닫힘차임 윈도우(HPSS 하모닉) + 노이즈 negative. CMN 적용.
 
-**월요일(2026-06-01) 라이브 추론 계획 — 등교=노트북 모니터, 하교=온보드 LCD**
+**라이브 추론 계획 — 등교=노트북 모니터, 하교=온보드 LCD**
 
-> ⚠️ 이 계획은 13-class 시절 작성. 분류기가 cross-trip ~40%라 **데모 프레이밍은 재검토 중**(Claude AI와 상의). 아래 하드웨어/펌웨어 분리 로직(등교=노트북 저위험, 하교=온보드)은 유효.
+리스크를 등교 트립에서 0으로 두기 위해 **추론 위치를 트립별로 분리** (차임+가속도계 카운팅 기준):
 
-리스크를 등교 트립에서 0으로 두기 위해 **추론 위치를 트립별로 분리**:
-
-- **등교 (오전, 저위험)**: 검증된 **bringup 펌웨어 그대로**(PCM만 USB-UART 스트리밍) → 노트북이 PCM 수신, **재학습 13-class 모델로 노트북에서 실시간 추론**(지난역/현재역 출력) + **raw PCM 동시 저장**(재학습용). 펌웨어 통합 리스크 0. "디스플레이 없이 노트북 모니터링"과 일치.
+- **등교 (오전, 저위험)**: **bringup 펌웨어 + ADXL 읽기 추가**(PCM + accel을 USB-UART 스트리밍) → 노트북이 수신, **노트북에서 실시간 카운팅**(가속도 정차 ∧ 차임 → 지난역/현재역) + **raw PCM·accel 동시 저장**(검증/튜닝용). 추론을 노트북에 두어 펌웨어 통합 리스크 최소화.
 - **학교에서 디스플레이 인수** → 온보드 통합 펌웨어 빌드/플래시.
-- **하교 (오후, 시연영상)**: **온보드 통합 펌웨어**(bringup I2S 마이크 DMA + app_path1 추론+CMN + ST7789V LCD)로 보드 단독 동작 촬영. 동시에 PCM 백업 저장.
+- **하교 (오후, 시연영상)**: **온보드 통합 펌웨어**(bringup I2S 마이크 DMA + 차임 검출(+CMN) + ADXL 정차 검출 + LCD)로 보드 단독 동작 촬영. 동시에 PCM·accel 백업 저장.
 
-> 등교에서 멀티플렉스(PCM+결정 동시 펌웨어 출력) 대신 **노트북측 추론**을 쓰는 이유: 같은 UX를 펌웨어 무변경으로 얻어 트립 날릴 위험 제거. offline post-edit(트립 audio를 `verify_pipeline.py`에 흘려 결정 추출→영상 오버레이)도 백업으로 항상 가능.
+> 등교에서 **노트북측 추론**을 쓰는 이유: 같은 UX를 펌웨어 최소변경으로 얻어 트립 날릴 위험 제거. offline post-edit(트립 audio+accel을 카운팅 파이프라인에 흘려 결정 추출→영상 오버레이)도 백업으로 항상 가능.
 
 **트립 실패 정의 (재시도 필요)**
 - 마크 누락 ≥ 50% (6역 이상)
@@ -269,39 +297,24 @@ imsisul/
 - 트리거 확정 시 시작점 +1.5초부터 2초를 CNN에 입력
 - CNN confidence < 0.5 → 분류 보류
 
-**Path 2 (라이브) — Stage 2를 metric learning으로 전환** (2026-05-28)
-- Stage 1 KWS는 동일(트리거 검출). **Stage 2는 13-class softmax 폐기 → 인코더+prototype**.
-- **인코더**: 작은 Conv2D + **Flatten**(GAP 금지 — 짧은 본역명 토큰을 시간평균이 뭉갬) → 64-d L2-정규화 임베딩. log-mel(40)+**per-window CMN** 입력.
-- **학습**: Prototypical Network(episodic). 같은 역(다른 노이즈/채널)=양성, 다른 역=음성. 에피소드의 support/query를 **다른 소스(synth↔real, real-tripA↔tripB)**에서 뽑아 채널 불변 유도.
-- **추론**: 역당 prototype 1개(클린 임베딩 평균) 저장 → 입력 임베딩의 **최근접 prototype**. cosine < τ 또는 top1−top2 < δ 면 보류(abstain).
-- **윈도우**: 분류 입력 = "이번역은 [본역명]" [트리거 onset, +2.0s]. 부역명/2차 안내 제외(코레일 부역명은 클린에 없음). 환승역 2번째 "이번역"은 20s 쿨다운으로 무시.
-- **CMN은 학습·추론·펌웨어 melspec 모두 동일 적용 필수**(클린 모델이 라이브 0 트리거였던 절대레벨 mismatch 제거).
+**Path 2 (라이브) — 차임+가속도계 역 카운팅** (2026-06-04) — ⚠️ **2026-06-18 폐기됨.** 가속도계 빼고 **차임-only 검출 + 디스플레이**로 단순화(위 "Path 2 온디바이스 차임 데모" 참조). 아래는 가속도계 시절 기록(보존). 차임 검출·CMN·탑승역앵커는 그대로 재활용.
 
-### Path 2 분류기 실험 기록 (cross-trip go/no-go)
+음향 분류기(KWS 트리거 + 13-class/ProtoNet 인코더)는 **폐기** — cross-trip 채널 천장(~42%)·KWS false(56/trip)을 못 넘음(시도 기록은 아래 "음향 분류기 실험" + [PATH2_RESULTS.md](PATH2_RESULTS.md)). 역 *이름*을 맞히는 대신 역을 **카운트**한다.
 
-문제: **학습 안 한 트립(=새 채널)에서 역을 맞히는가.** 시드 고정 + 트립단위 leave-one-out(LOO)으로 정직하게 채점. chance=8%(1/13), 사용가능 목표 ~90%.
+- **시작 앵커**: 탑승역 + 방향(캡처 UI 기존 기능). 시연 트립은 **완행**(모든 역 정차 → 정차수=역수 1:1), 노선은 한 방향 단조 이동.
+- **가속도계(ADXL) = 주(主) 카운트**: 열차 모션(감속→정차 dwell→가속)으로 정차 이벤트 검출. moving↔stopped 상태머신, 정지 시 노이즈 플로어로 자동 캘리브(**dwell 시간 하드코딩 금지**, 작업규칙 #2). 모션은 물리라 **채널 불변** → 그동안의 채널 천장을 통째로 우회. **accel은 학습 대상 아님**(임계 기반 신호처리).
+- **닫힘 차임(삐리리리) = 확인(보)**: HPSS 하모닉 톤 격리, win=3.0s, **7트립 LOO recall 94% / false 10.3/trip**(trip4 +4세미톤 변종 제외, 상세 PATH2_RESULTS §12-E). 차임은 **하드 AND 아님**(94%라도 AND는 under-count→cascade) — confidence를 올리고 신호대기 정차를 배제하는 용도. 차임 false 10.3은 mid-segment라 accel 정차 게이트가 흡수. 차임 없는 정차는 노선 prior(남은 역 수)로 보정. **trip4 변종(차임 검출 붕괴)은 accel이 음색 무관하게 정차를 잡아 구원.**
+- **출력**: 카운트 + 노선 순서 → 지난역/현재역 (등교=노트북 모니터 / 하교=온보드 LCD).
+- **CMN**: 차임 검출 melspec에도 동일 적용 필수(채널 절대레벨 mismatch 제거 — 클린 모델이 라이브 0 검출이던 원인).
 
-| 접근 | cross-trip LOO | 비고 |
-|---|---|---|
-| 13-class softmax (GlobalAvgPool) | **19%** | 한 클래스로 붕괴. GAP가 본역명 토큰을 평균내 뭉갬(held-in val 11%) |
-| 13-class softmax (Flatten) | ~19% | held-in val 76%로 회복했으나 cross-trip은 여전히 붕괴 |
-| **ProtoNet metric (3트립)** | **42%** | 붕괴 안 함(예측 분산). 2-stage·CMN 유지 |
-| ProtoNet metric (4트립) | 35% | **4번째 트립 추가해도 안 오름** → 병목=데이터 양 아님 |
-| ProtoNet + reverb 채널증강 | 35% | wash. 합성 reverb는 실 채널차 못 흉내 |
-| CMVN / EQ 증강 | 도움 없음 | 정적 EQ는 CMN이 이미 제거 |
-| PCEN front-end | 10%→33% | ❌ 패배. CMN이 정적 EQ를 이미 제거해 PCEN 무의미(스케일 보정해도 baseline 미달) |
-| **채널 적대 GRL (trips-only, λ=0.3)** | **44%** | ✅ 최고 모델 레버. 임베딩서 채널축 제거, 도메인 헤드는 학습 전용→온보드 비용 0 |
-| 실 RIR 보간 증강 | 불가 | clean≠live(다른 녹음, envelope 상관 0.25)→deconvolution 입출력쌍 없음 |
-| episode 600→2000 | 44→46% | wash. 천장은 compute 아님 |
-| real-only + 실노이즈 증강 | 38% | clean 빼고 real만+증강이 clean-synth(35%)보다 나음. 모든 positive가 cross-trip |
-| **+ 시퀀스 prior (노선 단조성)** | **75%** | ✅✅ 돌파. 3/4 트립 100%. 후처리(Viterbi/offset)라 온보드 비용 0 |
+### Path 2 음향 분류기 실험 — 폐기 (요약)
 
-**진단/결론** (상세: [PATH2_RESULTS.md](PATH2_RESULTS.md)):
-- **모델 레버 천장 ≈ 42~44%**(채널 4개 한계). PCEN 패배, 실 RIR 불가, episode wash 모두 확인 → 병목은 compute가 아니라 **실 채널(트립) 수**. GRL(채널 적대)이 최고 모델 레버(44%, 온보드 0), real-only+증강이 clean-synth보다 나음(38%>35%).
-- **돌파구 = 시퀀스 prior**: 열차는 노선을 한 방향 단조 이동(방향 알려짐)이라 연속 안내방송=연속 역. per-mark cosine을 emission, 노선 위상을 transition으로 한 Viterbi/연속-런 디코딩이 **per-mark 33~42% → 75%(3/4 트립 100%)**. 데이터 누수 아닌 실제 물리 제약. 후처리라 **온보드 비용 0**. 90%는 트립 몇 개 더 모으면 도달.
-- 핵심 통찰: 안내방송은 KORAIL 단일 녹음의 결정론적 재생(고정 신호). 변하는 건 노이즈(합성 가능) + **채널(실 트립 수만큼만)**. **CMN 필수**(없으면 라이브 0 트리거)이고 그 CMN이 정적 EQ를 지워 EQ/PCEN/RIR 증강을 무력화. **자동 마크 위치추적 불가**(NCC/DTW 4종 실패) → 정밀 마킹은 사람 청취.
-- 기록 위치(시드 고정 로컬 재현): `path2_metric_poc.py`(metric/real-only LOO), `path2_grl_poc.py`(GRL), `path2_rir_feasibility.py`(RIR 불가 근거), `path2_seqprior_poc.py`(시퀀스 prior), `path2_export_clips.py`(자르기 청취용 wav).
-- ⚠️ 배포 블로커: `encoder.tflite` 646KB(Flatten→Dense 61만 weight) > F411 Flash 512KB → 인코더 축소 필요. KWS(15.7KB)·시퀀스 디코드(후처리)는 문제 없음.
+라이브 cross-trip 역 *이름* 분류를 여러 방법으로 시도했으나 **사용가능(90%)에 못 닿아 폐기**, 차임+가속도계 카운팅으로 전환. 전체 표·진단·재현 스크립트는 [PATH2_RESULTS.md](PATH2_RESULTS.md)(§1~§12)에 보존.
+
+- 시도한 것(전부 천장): 13-class softmax(19%), ProtoNet 인코더(~42%), 채널적대 GRL(44%), 시퀀스 prior(75%, 단 *검출 완벽* 가정), KWS 트리거(false 56/trip), 그리고 false 억제용 PCEN·실 RIR·hard-neg mining·매치드필터·고정구문 prototype 게이트 — **모두 패배**.
+- **근본 병목 = 실 채널(트립) 수.** 안내방송은 코레일 단일녹음의 결정론적 재생(고정신호)이라 변하는 건 노이즈(합성 가능)와 **채널**(차량 PA·객차 음향·마이크 위치 = 트립 수만큼만). 트립 4→8로 늘려도 모델 천장 안 올랐고, KWS false는 "음성 vs 음성"이라 단독 억제 불가. → 역 이름 인식 자체를 접고 **역 카운팅**으로 선회.
+- **살아남아 재활용된 것**: ① **CMN**(없으면 라이브 0 검출), ② **차임 HPSS 검출**(94%/10.3fp, 카운팅의 확인 신호), ③ **탑승역 앵커 + 노선 단조성**(카운팅 골격), ④ **자동 마크 위치추적 불가** 교훈(정밀 마킹은 사람 청취 — NCC/DTW 4종 실패).
+- 배포: 인코더 폐기로 `encoder.tflite` 646KB(>F411 512KB Flash) 블로커 소멸. 온디바이스는 차임 검출(가벼움) + accel 임계 로직뿐.
 
 ### 신호 처리
 - 샘플링: 16kHz

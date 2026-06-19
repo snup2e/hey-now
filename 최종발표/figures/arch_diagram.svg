@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" font-family="'Pretendard','Malgun Gothic',sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#37B6A0"/>
+    </marker>
+    <style>
+      .card{fill:#F1F8F4;stroke:#CDE7DF;stroke-width:1.5;}
+      .title{fill:#191F28;font-size:19px;font-weight:800;}
+      .sub{fill:#4A5160;font-size:13px;font-weight:600;}
+      .badge{fill:#37B6A0;}
+      .bnum{fill:#ffffff;font-size:16px;font-weight:800;}
+      .flow{stroke:#37B6A0;stroke-width:2.5;fill:none;}
+      .pill{fill:#E6F6F1;stroke:#A6E3D5;stroke-width:1.5;}
+      .pilltext{fill:#1C9C84;font-size:16px;font-weight:800;}
+      .cap{fill:#4A5160;font-size:15px;font-weight:600;}
+      .cap b{fill:#1C9C84;font-weight:800;}
+    </style>
+  </defs>
+
+  <!-- input header pill -->
+  <rect class="pill" x="360" y="26" width="560" height="46" rx="23"/>
+  <text class="pilltext" x="640" y="55" text-anchor="middle">입력 · 차내 음향 (안내방송 · 출발 차임 &#8220;삐리리리&#8221;)</text>
+
+  <!-- ===== pipeline cards (5) ===== -->
+  <!-- card template: x = 40,290,540,790,1040 ; W=200 ; y 150..350 -->
+  <g>
+    <rect class="card" x="40"   y="150" width="200" height="200" rx="18"/>
+    <circle class="badge" cx="70" cy="184" r="17"/><text class="bnum" x="70" y="190" text-anchor="middle">1</text>
+    <text class="title" x="140" y="232" text-anchor="middle">마이크</text>
+    <text class="sub"   x="140" y="262" text-anchor="middle">ICS-43434</text>
+    <text class="sub"   x="140" y="284" text-anchor="middle">I2S MEMS · 16 kHz</text>
+    <text class="sub"   x="140" y="312" text-anchor="middle" fill="#8AA39B">mono PCM</text>
+  </g>
+  <g>
+    <rect class="card" x="290"  y="150" width="200" height="200" rx="18"/>
+    <circle class="badge" cx="320" cy="184" r="17"/><text class="bnum" x="320" y="190" text-anchor="middle">2</text>
+    <text class="title" x="390" y="232" text-anchor="middle">STM32 F411</text>
+    <text class="sub"   x="390" y="262" text-anchor="middle">스트리밍 log-mel</text>
+    <text class="sub"   x="390" y="284" text-anchor="middle">40 mel + CMN</text>
+    <text class="sub"   x="390" y="312" text-anchor="middle" fill="#8AA39B">자체 FFT</text>
+  </g>
+  <g>
+    <rect class="card" x="540"  y="150" width="200" height="200" rx="18"/>
+    <circle class="badge" cx="570" cy="184" r="17"/><text class="bnum" x="570" y="190" text-anchor="middle">3</text>
+    <text class="title" x="640" y="232" text-anchor="middle">차임 CNN</text>
+    <text class="sub"   x="640" y="262" text-anchor="middle">INT8 양자화</text>
+    <text class="sub"   x="640" y="284" text-anchor="middle">X-CUBE-AI</text>
+    <text class="sub"   x="640" y="312" text-anchor="middle" fill="#8AA39B">P(chime)</text>
+  </g>
+  <g>
+    <rect class="card" x="790"  y="150" width="200" height="200" rx="18"/>
+    <circle class="badge" cx="820" cy="184" r="17"/><text class="bnum" x="820" y="190" text-anchor="middle">4</text>
+    <text class="title" x="890" y="232" text-anchor="middle">출발 차임 검출</text>
+    <text class="sub"   x="890" y="262" text-anchor="middle">P &#8805; 0.6 · 디바운스</text>
+    <text class="sub"   x="890" y="284" text-anchor="middle">10 s 쿨다운</text>
+    <text class="sub"   x="890" y="312" text-anchor="middle" fill="#8AA39B">이벤트 마커</text>
+  </g>
+  <g>
+    <rect class="card" x="1040" y="150" width="200" height="200" rx="18"/>
+    <circle class="badge" cx="1070" cy="184" r="17"/><text class="bnum" x="1070" y="190" text-anchor="middle">5</text>
+    <text class="title" x="1140" y="232" text-anchor="middle">실시간 알림</text>
+    <text class="sub"   x="1140" y="262" text-anchor="middle">노트북 디스플레이</text>
+    <text class="sub"   x="1140" y="284" text-anchor="middle">UART 921600</text>
+    <text class="sub"   x="1140" y="312" text-anchor="middle" fill="#8AA39B">향후 온보드 LCD</text>
+  </g>
+
+  <!-- arrows between cards (y=250, in the 50px gaps) -->
+  <line class="flow" x1="244" y1="250" x2="286" y2="250" marker-end="url(#ah)"/>
+  <line class="flow" x1="494" y1="250" x2="536" y2="250" marker-end="url(#ah)"/>
+  <line class="flow" x1="744" y1="250" x2="786" y2="250" marker-end="url(#ah)"/>
+  <line class="flow" x1="994" y1="250" x2="1036" y2="250" marker-end="url(#ah)"/>
+
+  <!-- input pill -> card1 connector -->
+  <line class="flow" x1="640" y1="72" x2="640" y2="110" />
+  <path class="flow" d="M640,110 C640,132 140,118 140,148" marker-end="url(#ah)"/>
+
+  <!-- caption -->
+  <text class="cap" x="640" y="420" text-anchor="middle">역 이름 분류(KWS + CNN)는 <tspan font-weight="800" fill="#1C9C84">cross-trip 천장</tspan>으로 폐기 &#8594; 채널 불변 <tspan font-weight="800" fill="#1C9C84">출발 차임 검출</tspan>로 전환</text>
+</svg>

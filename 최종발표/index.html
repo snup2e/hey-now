@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hey now! — 최종발표</title>
+<style>
+  /* Pretendard 로컬 임베드 (오프라인 자체완결 — CDN 불필요) */
+  @font-face{font-family:'Pretendard';font-weight:45 920;font-style:normal;font-display:swap;src:url('PretendardVariable.woff2') format('woff2-variations');}
+  :root{
+    --primary:#37B6A0; /* mint-teal */ --primary-soft:#A6E3D5; --primary-deep:#1C9C84;
+    --ink:#191F28; --ink-soft:#4A5160; --line:#E1ECE7; --bg:#ffffff;
+    --surface:#F0F7F4; --good:#1AA87C; --good-deep:#0C7A59; --bad:#F0506E; --amber:#FF9F43; --purple:#A055FF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  html,body{height:100%;font-family:'Pretendard',-apple-system,system-ui,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden;}
+  ::selection{background:var(--primary);color:#fff;}
+
+  /* ===== 2D deck: 섹션=세로(row), 섹션 내 슬라이드=가로(track) ===== */
+  .deck{position:fixed;inset:0;overflow:hidden;}
+  #stage{position:absolute;top:0;left:0;transition:transform .6s cubic-bezier(.7,0,.2,1);will-change:transform;}
+  .row{width:100vw;height:100vh;overflow:hidden;}
+  .track{display:flex;height:100%;width:max-content;transition:transform .6s cubic-bezier(.7,0,.2,1);will-change:transform;}
+  .slide{flex:0 0 100vw;height:100vh;position:relative;display:flex;flex-direction:column;padding:7vh 15vw 6vh 7vw;overflow:hidden;background:var(--bg);}
+  .slide-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:stretch;width:100%;min-height:0;gap:18px;}
+
+  .s-head{display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-shrink:0;}
+  .s-num{background:var(--primary);color:#fff;width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;position:relative;box-shadow:0 12px 28px -10px rgba(55,182,160,.55);}
+  .s-num::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:0;height:0;border:7px solid transparent;border-top-color:var(--primary);border-bottom:0;}
+  .s-title{font-size:2.1rem;font-weight:800;letter-spacing:-.02em;}
+  .s-sub{font-size:1.08rem;font-weight:700;color:var(--ink-soft);padding-left:16px;margin-left:4px;border-left:2px solid var(--line);line-height:1.2;}
+
+  .blob{position:absolute;border-radius:50%;pointer-events:none;will-change:transform;}
+  .blob-a{right:-12vw;bottom:-30vh;width:90vh;height:90vh;background:var(--primary-soft);opacity:.85;animation:floatA 14s ease-in-out infinite;}
+  .blob-b{right:-22vw;bottom:-42vh;width:65vh;height:65vh;background:var(--primary);opacity:.55;animation:floatB 18s ease-in-out infinite;}
+  @keyframes floatA{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-28px,-44px) rotate(18deg)}}
+  @keyframes floatB{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(26px,32px) rotate(-14deg)}}
+
+  .anim{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);}
+  .slide.active .anim{opacity:1;transform:none;}
+  .slide.active .anim.d1{transition-delay:.05s}.slide.active .anim.d2{transition-delay:.18s}
+  .slide.active .anim.d3{transition-delay:.32s}.slide.active .anim.d4{transition-delay:.46s}.slide.active .anim.d5{transition-delay:.6s}
+
+  .cover{justify-content:center;padding:7vh 7vw;}
+  .cover-eyebrow{font-size:1rem;color:var(--ink-soft);letter-spacing:.4em;font-weight:700;margin-bottom:24px;text-transform:uppercase;}
+  .cover-brand{display:inline-flex;align-items:center;gap:14px;margin-bottom:32px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e6f6f1,#d6efe7);color:var(--primary-deep);font-weight:700;font-size:1.05rem;width:fit-content;}
+  .cover-brand .dot{width:10px;height:10px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 0 rgba(55,182,160,.6);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(55,182,160,.55)}70%{box-shadow:0 0 0 14px rgba(55,182,160,0)}100%{box-shadow:0 0 0 0 rgba(55,182,160,0)}}
+  .cover h1{font-size:clamp(3.2rem,6vw,5.4rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;color:var(--primary);margin-bottom:8px;}
+  .cover h2{font-size:clamp(3.2rem,6vw,5.4rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-bottom:44px;}
+  .cover-info{border-left:3px solid var(--primary);padding:6px 0 6px 22px;font-size:1.05rem;color:var(--ink-soft);line-height:1.9;}
+  .cover-info b{color:var(--ink);font-weight:700;}
+  .scroll-hint{position:absolute;left:50%;bottom:4vh;transform:translateX(-50%);color:var(--ink-soft);font-size:.85rem;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.8;}
+  .scroll-hint .mouse{width:24px;height:38px;border:2px solid var(--ink-soft);border-radius:14px;position:relative;}
+  .scroll-hint .mouse::after{content:'';position:absolute;left:50%;top:7px;width:3px;height:7px;background:var(--ink-soft);border-radius:2px;transform:translateX(-50%);animation:scrollDot 1.6s ease-in-out infinite;}
+  @keyframes scrollDot{0%{transform:translate(-50%,0);opacity:1}60%{transform:translate(-50%,12px);opacity:0}100%{transform:translate(-50%,0);opacity:0}}
+
+  .contents{justify-content:center;align-items:flex-start;padding-left:46vw;}
+  .contents .big{font-size:clamp(3rem,5vw,4.2rem);color:var(--primary);font-weight:900;letter-spacing:-.02em;margin-bottom:34px;}
+  .toc{list-style:none;display:flex;flex-direction:column;gap:16px;}
+  .toc li{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;color:var(--ink);cursor:pointer;transition:transform .25s ease,color .25s ease;display:flex;align-items:center;gap:16px;}
+  .toc li:hover{transform:translateX(6px);color:var(--primary);}
+  .toc li .idx{color:var(--primary);font-weight:800;}
+
+  .func-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .func-card{background:var(--surface);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);}
+  .func-card .ic{font-size:2.1rem;} .func-card .tag{font-size:.76rem;font-weight:800;letter-spacing:.08em;color:var(--primary);text-transform:uppercase;}
+  .func-card h3{font-size:1.25rem;font-weight:800;} .func-card p{font-size:.94rem;color:var(--ink-soft);line-height:1.55;}
+
+  .figframe{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;}
+  .figframe img{max-width:100%;max-height:56vh;object-fit:contain;border-radius:10px;}
+  .figframe.big img{max-height:66vh;}
+  .fig-row{flex:1;min-height:0;display:flex;gap:28px;align-items:center;justify-content:center;width:100%;}
+  .fig-row img{max-width:46%;max-height:54vh;object-fit:contain;border-radius:10px;box-shadow:0 10px 30px -18px rgba(25,31,40,.4);}
+  .cap{flex-shrink:0;font-size:1.3rem;font-weight:700;color:var(--ink);text-align:center;line-height:1.45;}
+  .cap b{color:var(--primary-deep);}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .stat-grid.g3{grid-template-columns:repeat(3,1fr);}
+  .stat{background:var(--surface);border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;gap:6px;}
+  .stat .v{font-size:2.3rem;font-weight:900;letter-spacing:-.02em;}
+  .stat .k{font-size:.92rem;color:var(--ink-soft);font-weight:700;} .stat .s{font-size:.8rem;color:#9aa3b2;}
+  .stat.blue .v{color:var(--primary);} .stat.green .v{color:var(--good-deep);} .stat.amber .v{color:var(--amber);} .stat.bad .v{color:var(--bad);}
+  .summary-note{margin-top:22px;font-size:1.2rem;font-weight:700;color:var(--ink);text-align:center;}
+  .summary-note b{color:var(--primary-deep);} .summary-note span{color:var(--ink-soft);font-weight:500;font-size:1.02rem;}
+
+  .cmp-note{margin:14px auto 0;text-align:center;font-size:1.02rem;color:var(--ink-soft);font-weight:600;line-height:1.5;}
+  .cmp-note b{color:var(--primary-deep);font-weight:800;}
+
+  .demo-video{align-self:center;width:auto;height:auto;max-width:100%;max-height:70vh;border-radius:14px;background:transparent;border:1px solid var(--line);box-shadow:0 16px 44px -22px rgba(25,31,40,.28);}
+
+  .concl{display:flex;flex-direction:column;gap:13px;}
+  .concl-row{display:grid;grid-template-columns:1fr auto 1.3fr;gap:18px;align-items:center;}
+  .concl-card{border-radius:14px;padding:15px 20px;}
+  .concl-card.lim{background:#FDEEF1;} .concl-card.res{background:#F1FAF4;border:1.5px solid var(--good);} .concl-card.todo{background:var(--surface);}
+  .concl-card h4{font-size:1.05rem;font-weight:800;margin-bottom:3px;}
+  .concl-card.lim h4{color:var(--bad);} .concl-card.res h4{color:var(--good-deep);}
+  .concl-card p{font-size:.9rem;color:var(--ink-soft);line-height:1.45;}
+  .concl .ar{color:#9aa3b2;font-size:1.3rem;font-weight:800;text-align:center;}
+  .badge{display:inline-block;font-size:.76rem;font-weight:800;padding:3px 10px;border-radius:999px;margin-bottom:5px;}
+  .badge.ok{background:var(--good);color:#fff;} .badge.next{background:#cfd6df;color:#4a5160;}
+
+  /* Q&A */
+  .qa{align-items:center;justify-content:center;text-align:center;padding:7vh 7vw;}
+  .qa h1{font-size:clamp(5rem,11vw,11rem);font-weight:900;letter-spacing:-.04em;line-height:.9;background:linear-gradient(135deg,var(--primary),var(--primary-soft));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:28px;}
+  .qa p{font-size:1.25rem;color:var(--ink-soft);margin-bottom:38px;}
+  .qa .meta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .qa .chip{background:var(--surface);padding:10px 18px;border-radius:999px;font-weight:600;color:var(--ink-soft);font-size:.95rem;display:inline-flex;align-items:center;gap:8px;}
+  .qa .chip a{color:var(--primary);text-decoration:none;font-weight:700;}
+  .qa-orbs{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .qa-orbs span{position:absolute;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--primary-soft),var(--primary));opacity:.18;animation:orb 16s ease-in-out infinite;}
+  .qa-orbs span:nth-child(1){width:280px;height:280px;left:8%;top:18%;animation-delay:0s;}
+  .qa-orbs span:nth-child(2){width:200px;height:200px;right:10%;top:22%;animation-delay:-4s;}
+  .qa-orbs span:nth-child(3){width:340px;height:340px;left:15%;bottom:-6%;animation-delay:-8s;}
+  .qa-orbs span:nth-child(4){width:180px;height:180px;right:20%;bottom:8%;animation-delay:-12s;}
+  @keyframes orb{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.1)}}
+
+  #secnav{position:fixed;right:0;top:0;height:100vh;width:210px;display:none;flex-direction:column;justify-content:center;gap:3px;padding:0 18px 0 10px;z-index:40;}
+  #secnav.show{display:flex;}
+  #secnav .sn{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;cursor:pointer;opacity:.45;transition:opacity .25s,background .25s;}
+  #secnav .sn .sd{width:9px;height:9px;border-radius:50%;background:#c2cbd6;flex-shrink:0;transition:all .25s;}
+  #secnav .sn .si{font-size:.72rem;font-weight:800;color:#aab3c0;width:16px;}
+  #secnav .sn .sl{font-size:.82rem;font-weight:700;color:var(--ink-soft);line-height:1.2;}
+  #secnav .sn.done{opacity:.8;} #secnav .sn.done .sd{background:var(--primary-soft);}
+  #secnav .sn.active{opacity:1;background:var(--surface);}
+  #secnav .sn.active .sd{background:var(--primary);transform:scale(1.5);box-shadow:0 0 0 4px rgba(55,182,160,.15);}
+  #secnav .sn.active .sl{color:var(--primary-deep);font-weight:800;} #secnav .sn.active .si{color:var(--primary);}
+
+  #progress-track{position:fixed;top:0;left:0;width:100%;height:4px;z-index:50;}
+  #progress{height:100%;width:0;background:linear-gradient(90deg,var(--primary-soft),var(--primary));transition:width .4s ease;}
+  #help-open{position:fixed;left:14px;bottom:14px;z-index:50;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:800;cursor:pointer;}
+  .help-modal{position:fixed;inset:0;background:rgba(15,20,30,.5);display:none;align-items:center;justify-content:center;z-index:100;}
+  .help-modal.is-open{display:flex;}
+  .help-card{background:#fff;border-radius:16px;padding:28px 32px;max-width:440px;}
+  .help-card h3{margin-bottom:14px;} .help-card .row2{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:.95rem;}
+  .help-card kbd{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 9px;font-family:ui-monospace,monospace;font-size:.85rem;}
+  .help-card button{margin-top:18px;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;}
+  @media(max-width:900px){#secnav{display:none!important;} .slide{padding:7vh 7vw 6vh;} .contents{padding-left:7vw;}}
+
+  /* ===== validation tables ===== */
+  .vtab{margin:0 auto;border-collapse:separate;border-spacing:0;font-size:1.12rem;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 8px 24px -16px rgba(25,31,40,.3);}
+  .vtab th,.vtab td{padding:13px 30px;text-align:center;}
+  .vtab th:first-child,.vtab td:first-child{text-align:left;}
+  .vtab thead th{font-size:.88rem;color:var(--ink-soft);font-weight:700;background:#e6f1ec;letter-spacing:.01em;}
+  .vtab tbody td{color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums;}
+  .vtab tbody tr+tr td{border-top:1px solid rgba(20,40,30,.12);}
+  .vtab td + td,.vtab th + th{border-left:1px solid rgba(20,40,30,.10);}
+  .vtab .hl{background:rgba(55,182,160,.11);color:var(--primary-deep);font-weight:800;}
+  .vtab .bad{background:rgba(240,80,110,.10);color:var(--bad);font-weight:800;}
+  .vtab .good{background:rgba(21,184,107,.12);color:var(--good-deep);font-weight:800;}
+  .vtab thead .hl{background:#cceae0;color:var(--primary-deep);}
+  .vtab.dtab{font-size:1.2rem;}
+  .vtab.dtab th,.vtab.dtab td{padding:14px 40px;}
+
+  /* ===== EDA bar chart (per-station collection) ===== */
+  .eda{display:flex;flex-direction:column;gap:12px;width:100%;}
+  .eda-title{font-size:1.08rem;font-weight:700;color:var(--ink);text-align:center;}
+  .eda-title b{color:var(--primary-deep);}
+  .bars{display:flex;align-items:flex-end;justify-content:center;gap:12px;height:21vh;padding:0 6px;}
+  .bar{flex:1;max-width:52px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;}
+  .bar i{display:block;width:100%;background:linear-gradient(180deg,var(--primary),var(--primary-deep));border-radius:7px 7px 0 0;box-shadow:0 8px 18px -10px rgba(55,182,160,.6);}
+  .bar.half i{background:linear-gradient(180deg,var(--primary-soft),var(--primary));}
+  .bar .bv{font-size:.9rem;font-weight:800;color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+  .bar.half .bv{color:var(--ink-soft);}
+  .bar .bl{font-size:.74rem;font-weight:700;color:var(--ink-soft);text-align:center;line-height:1.05;}
+  .eda-foot{font-size:.98rem;color:var(--ink-soft);text-align:center;font-weight:600;line-height:1.5;}
+  .eda-foot b{color:var(--primary-deep);font-weight:800;}
+
+  /* ===== shot mode (headless capture) ===== */
+  body.shot #progress-track,body.shot #help-open,body.shot .help-modal,body.shot .scroll-hint{display:none!important;}
+  body.shot .anim{opacity:1!important;transform:none!important;transition:none!important;animation:none!important;}
+  body.shot .blob,body.shot .qa-orbs span{animation:none!important;}
+  body.shot #stage,body.shot .track{transition:none!important;}
+  body.shot .demo-video{display:none!important;}
+  .shot-poster{display:none;}
+  body.shot .shot-poster{display:block;align-self:center;max-width:100%;max-height:72vh;object-fit:contain;border-radius:14px;border:1px solid var(--line);box-shadow:0 16px 44px -22px rgba(25,31,40,.28);}
+</style>
+</head>
+<body>
+<div id="progress-track"><div id="progress"></div></div>
+<nav id="secnav"></nav>
+<button id="help-open">?</button>
+<div class="help-modal" id="help-modal"><div class="help-card">
+  <h3>단축키</h3>
+  <div class="row2"><span>다음 / 이전</span><span><kbd>&rarr;</kbd> <kbd>&larr;</kbd> <kbd>&darr;</kbd> <kbd>&uarr;</kbd> <kbd>Space</kbd></span></div>
+  <div class="row2"><span>처음 / 끝</span><span><kbd>Home</kbd> <kbd>End</kbd></span></div>
+  <div class="row2"><span>전체화면</span><span><kbd>F</kbd></span></div>
+  <button id="help-close">닫기</button>
+</div></div>
+
+<div class="deck"><div id="stage">
+
+  <!-- ===== 표지 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide cover" data-label="표지">
+      <div class="blob blob-a"></div><div class="blob blob-b"></div>
+      <div class="slide-body" style="position:relative;z-index:2;">
+        <div class="cover-eyebrow anim d1">임베디드시스템설계 · 최종발표</div>
+        <div class="cover-brand anim d1"><span class="dot"></span>지하에서도, 안내방송으로 내 위치를</div>
+        <h1 class="anim d2">Hey now!</h1>
+        <h2 class="anim d3">지하철 하차역 알림</h2>
+        <div class="cover-info anim d4"><b>4조 · 팀원 김건형 · 차현비</b> · 지도교수 정조운<br>STM32 보드 + 작은 AI 모델 · 서울 1호선 (성균관대 &rarr; 구로)</div>
+      </div>
+      <div class="scroll-hint anim d5"><div class="mouse"></div><span>scroll</span></div>
+    </section>
+  </div></div>
+
+  <!-- ===== 목차 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide contents" data-label="목차">
+      <div class="blob blob-a" style="left:-18vw;top:-18vh;right:auto;bottom:auto;width:55vh;height:55vh;"></div>
+      <div class="slide-body" style="position:relative;z-index:2;">
+        <h2 class="big anim d1">CONTENTS</h2>
+        <ol class="toc anim d2">
+          <li data-jump="문제정의"><span class="idx">01</span> 문제 정의</li>
+          <li data-jump="아키텍처"><span class="idx">02</span> 시스템 아키텍처</li>
+          <li data-jump="데이터수집"><span class="idx">03</span> 데이터 수집 · 라벨링 · 분석</li>
+          <li data-jump="접근1"><span class="idx">04</span> 접근 ① 역 이름 분류와 실제 열차의 벽</li>
+          <li data-jump="피벗"><span class="idx">05</span> 방향 전환 — 출발 신호음</li>
+          <li data-jump="데모"><span class="idx">06</span> Demo Video</li>
+          <li data-jump="결론"><span class="idx">07</span> 결론 · 한계 · 개선</li>
+        </ol>
+      </div>
+    </section>
+  </div></div>
+
+  <!-- ===== 01 문제 정의 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="문제정의" data-sec="0">
+      <div class="s-head anim d1"><div class="s-num">01</div><div class="s-title">문제 정의</div><div class="s-sub">지하에서 "지금 어느 역?"</div></div>
+      <div class="slide-body"><div class="func-grid">
+        <div class="func-card anim d2"><div class="ic">🧏</div><div class="tag">Who</div><h3>못 듣는 사용자</h3><p>청각장애인, 그리고 이어폰·통화로 안내방송을 놓치는 상황적 청각차단 사용자</p></div>
+        <div class="func-card anim d3"><div class="ic">📡</div><div class="tag">Why</div><h3>지하 = GPS 사각</h3><p>지하 구간은 GPS·셀룰러 측위가 부정확/차단. 안내방송은 이미 차내에 존재하는 위치 신호</p></div>
+        <div class="func-card anim d4"><div class="ic">🔔</div><div class="tag">What</div><h3>차내 음향 → 알림</h3><p>차내 음향을 TinyML(STM32)로 인식해 "지난 역 / 현재 역"을 별도 인프라 없이 알림</p></div>
+      </div></div>
+    </section>
+  </div></div>
+
+  <!-- ===== 02 아키텍처 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="아키텍처" data-sec="1">
+      <div class="s-head anim d1"><div class="s-num">02</div><div class="s-title">시스템 아키텍처</div><div class="s-sub">차내 음향 → 엣지 추론 → 알림</div></div>
+      <div class="slide-body"><div class="figframe big anim d2"><img src="figures/architecture.png" alt="시스템 아키텍처"></div></div>
+    </section>
+  </div></div>
+
+  <!-- ===== 03 데이터 (수집 · 라벨링 · 분석) ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="데이터수집" data-sec="2">
+      <div class="s-head anim d1"><div class="s-num">03</div><div class="s-title">데이터 수집</div><div class="s-sub">실제 1호선에서 직접 녹음 — 등교 4 + 하교 4</div></div>
+      <div class="slide-body">
+        <div class="fig-row anim d2">
+          <img src="figures/collect_00.jpg" alt="캡처 UI + STM32 보드">
+          <img src="figures/collect_04.jpg" alt="ICS-43434 + STM32 수집 장비">
+        </div>
+        <div class="cap anim d3"><b>STM32 + ICS-43434</b> 보드로 통학하며 차내 음성을 노트북에 USB 스트리밍 — <b>8회</b> 수집.</div>
+      </div>
+    </section>
+    <section class="slide" data-label="데이터라벨링" data-sec="2">
+      <div class="s-head anim d1"><div class="s-num">03</div><div class="s-title">데이터 라벨링</div><div class="s-sub">안내방송 시작점을 청취하며 정밀 마킹</div></div>
+      <div class="slide-body"><div class="figframe anim d2"><img src="figures/labeling.png" alt="마킹 GUI — 파형 + 역 마커"></div>
+        <div class="cap anim d3">수동으로 안내방송 구간 정밀 마킹.</div>
+      </div>
+    </section>
+    <section class="slide" data-label="데이터분석" data-sec="2">
+      <div class="s-head anim d1"><div class="s-num">03</div><div class="s-title">데이터 분석</div><div class="s-sub">8회로 모인 역별 안내방송</div></div>
+      <div class="slide-body">
+        <div class="eda anim d2">
+          <div class="eda-title">8회 수집 — 역별 <b>"이번역은 ○○역"</b> 안내방송 개수</div>
+          <div class="bars">
+            <div class="bar half"><span class="bv">4</span><i style="height:50%"></i><span class="bl">구로</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">가산</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">독산</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">금천</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">석수</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">관악</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">안양</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">명학</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">금정</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">군포</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">당정</span></div>
+            <div class="bar"><span class="bv">8</span><i style="height:100%"></i><span class="bl">의왕</span></div>
+            <div class="bar half"><span class="bv">4</span><i style="height:50%"></i><span class="bl">성대</span></div>
+          </div>
+          <div class="eda-foot">총 <b>96개</b> 안내방송 = <b>"이번역은" 96회</b>. 중간 11역은 각 8개, 종착·탑승역(구로·성균관대)은 한 방향만 지나 4개씩.</div>
+        </div>
+        <div class="func-grid anim d3" style="grid-template-columns:1fr 1fr;">
+          <div class="func-card"><div class="tag" style="color:var(--good-deep);">변하지 않음</div><h3>안내방송 말소리</h3><p>같은 녹음을 그대로 재생 — 역 이름·억양·타이밍이 녹음마다 동일. 모델이 새로 배울 게 없음</p></div>
+          <div class="func-card"><div class="tag" style="color:var(--bad);">변함</div><h3>노이즈 · 채널</h3><p>노이즈는 합성으로 보강 가능. 진짜 변수 = <b>채널</b>(차량 PA·객차 음향·마이크 위치) — 녹음한 열차 수만큼만 모임</p></div>
+        </div>
+        <div class="cap anim d4">→ 그래서 다음 <b>벽</b>은 "데이터 양"이 아니라 <b>"열차(채널) 다양성"</b> 부족.</div>
+      </div>
+    </section>
+  </div></div>
+
+  <!-- ===== 04 접근 ① 역 이름 분류 + 실제 열차의 벽 (병합) ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="접근1" data-sec="3">
+      <div class="s-head anim d1"><div class="s-num">04</div><div class="s-title">접근 ① 역 이름 분류 — 실제 열차의 벽</div><div class="s-sub">2-Stage KWS + CNN · 깨끗한 음원은 성공, 실제 열차에서 벽</div></div>
+      <div class="slide-body">
+        <div class="func-grid" style="grid-template-columns:1fr 1fr;align-items:stretch;">
+          <div class="func-card anim d2" style="border:1.5px solid var(--good);background:#F1FAF4;">
+            <div class="tag" style="color:var(--good-deep);">✓ 깨끗한 공식 음원 (Path 1)</div>
+            <h3>KWS + CNN 성공</h3>
+            <p>"이번 역은" 트리거(KWS) → 직후 2초로 14역 분류(CNN). 서울교통공사 음원으로 학습·시연.</p>
+            <div class="stat-grid g3" style="margin-top:10px;gap:8px;">
+              <div class="stat blue" style="padding:12px 8px;"><div class="v" style="font-size:1.55rem;">95.7%</div><div class="k" style="font-size:.82rem;">KWS val</div></div>
+              <div class="stat blue" style="padding:12px 8px;"><div class="v" style="font-size:1.55rem;">92.3%</div><div class="k" style="font-size:.82rem;">CNN 윈도우</div></div>
+              <div class="stat green" style="padding:12px 8px;"><div class="v" style="font-size:1.55rem;">17/17</div><div class="k" style="font-size:.82rem;">음원 단위</div></div>
+            </div>
+          </div>
+          <div class="func-card anim d3" style="border:1.5px solid var(--bad);background:#FDEEF1;">
+            <div class="tag" style="color:var(--bad);">✗ 실제 열차 (8회 직접 녹음)</div>
+            <h3>처음 타는 열차에서 벽</h3>
+            <table class="vtab" style="margin-top:8px;font-size:.98rem;box-shadow:none;width:100%;background:#fff;">
+              <thead><tr><th>재학습 시도</th><th>처음 타는 정확도</th></tr></thead>
+              <tbody>
+                <tr><td>13-class softmax</td><td class="bad">19%</td></tr>
+                <tr><td>ProtoNet 임베딩</td><td class="bad">~42%</td></tr>
+                <tr><td>채널적대 (GRL)</td><td class="bad">44%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="anim d4" style="margin-top:4px;display:flex;gap:30px;align-items:center;justify-content:center;flex-wrap:wrap;">
+          <table class="vtab">
+            <thead><tr><th>"이번역은" 트리거 검출 · 8회 LOO</th><th>검출함</th><th>검출 안 함</th></tr></thead>
+            <tbody>
+              <tr><td>실제 "이번역은" 안내 96개</td><td class="good">80 (TP)</td><td class="bad">16 (FN)</td></tr>
+              <tr><td>안내 아님 (잡담·"다음역은"·KTX)</td><td class="bad">447 (FP)</td><td class="good">정상 기각 (TN)</td></tr>
+            </tbody>
+          </table>
+          <div class="cmp-note" style="margin:0;max-width:340px;text-align:left;line-height:1.6;">검출율 <b>83%</b>(80/96)는 쓸만하지만 오검출이 <b>1회 탑승당 56회</b> — 역마다 정확히 1번을 못 세 카운팅이 무너집니다.<br><span style="font-size:.92rem;color:var(--ink-soft);font-weight:600;">같은 녹음 재생이라 변하는 건 채널뿐. 분류·검출 모두 사용 가능(90%) 미달 → 방향 전환.</span></div>
+        </div>
+      </div>
+    </section>
+  </div></div>
+
+  <!-- ===== 05 피벗: 차임 검출 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="피벗" data-sec="4">
+      <div class="s-head anim d1"><div class="s-num">05</div><div class="s-title">방향 전환 — 출발 신호음 검출</div><div class="s-sub">역 이름을 "맞히기" 대신 역을 "센다"</div></div>
+      <div class="slide-body"><div class="func-grid">
+        <div class="func-card anim d2"><div class="ic">🔔</div><div class="tag">Marker</div><h3>닫힘 신호음 = 출발</h3><p>문 닫힘 후 나는 출발 신호음(삐리리리)은 열차가 바뀌어도 똑같이 들려, 안정적인 이벤트 마커가 됩니다</p></div>
+        <div class="func-card anim d3"><div class="ic">🎚️</div><div class="tag">CMN</div><h3>채널 정규화 필수</h3><p>채널마다 절대 음량이 달라, per-window CMN(채널 평균 정규화) 없으면 라이브 검출 0개. 정규화하면 출발 신호음 검출이 살아남 — 차임 검출에도 동일 적용</p></div>
+        <div class="func-card anim d4"><div class="ic">🧮</div><div class="tag">Counting</div><h3>탑승역 앵커 + 카운트</h3><p>완행은 정차=역수 1:1, 노선은 단조 이동 → 출발 신호음을 세어 지난역/현재역 추정</p></div>
+      </div>
+      <div class="anim d5" style="margin-top:6px;display:flex;gap:30px;align-items:center;justify-content:center;flex-wrap:wrap;">
+        <table class="vtab">
+          <thead><tr><th>출발 신호음 검출 · 7회 LOO (HPSS)</th><th>검출함</th><th>검출 안 함</th></tr></thead>
+          <tbody>
+            <tr><td>실제 출발 신호음 79개</td><td class="good">74 (TP)</td><td class="bad">5 (FN)</td></tr>
+            <tr><td>비신호음 구간</td><td class="bad">72 (FP)</td><td class="good">정상 기각 (TN)</td></tr>
+          </tbody>
+        </table>
+        <div class="cmp-note" style="margin:0;max-width:300px;text-align:left;line-height:1.6;">recall <b>94%</b> (74/79) · 오검출 <b>10.3회 / 1회 탑승</b><br><span style="font-size:.92rem;color:var(--ink-soft);font-weight:600;">오검출은 주행 중(mid-segment)이라 정차 게이트가 흡수. 8회(등교 4 + 하교 4) 직접 녹음 기준.</span></div>
+      </div></div>
+    </section>
+  </div></div>
+
+  <!-- ===== 06 Demo ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="데모" data-sec="5">
+      <div class="s-head anim d1"><div class="s-num">06</div><div class="s-title">시연 영상</div><div class="s-sub">마이크 → 출발 신호음 검출 → 실시간 알림</div></div>
+      <div class="slide-body">
+        <video class="demo-video anim d2" src="demo.mp4" controls preload="metadata" playsinline></video>
+        <img class="shot-poster anim d2" src="figures/alert_preview.png" alt="데모 — 출발/하차 알림 화면">
+      </div>
+    </section>
+  </div></div>
+
+  <!-- ===== 07 결론 ===== -->
+  <div class="row"><div class="track">
+    <section class="slide" data-label="결론" data-sec="6">
+      <div class="s-head anim d1"><div class="s-num">07</div><div class="s-title">결론 · 한계와 성과</div></div>
+      <div class="slide-body">
+        <div class="func-grid" style="grid-template-columns:1fr 1fr;align-items:stretch;">
+          <div class="func-card anim d2" style="background:#FDEEF1;border:1px solid #f6c9d3;">
+            <span class="badge" style="background:var(--bad);color:#fff;align-self:flex-start;">한계 1</span>
+            <h3>하드웨어 제약 (STM32)</h3>
+            <p>F411: <b>512KB Flash · 128KB SRAM · 100MHz</b>(FPU). 무거운 임베딩 인코더(646KB)는 못 올려 — 가벼운 모델만 온디바이스로 가능</p>
+          </div>
+          <div class="func-card anim d3" style="background:#FDEEF1;border:1px solid #f6c9d3;">
+            <span class="badge" style="background:var(--bad);color:#fff;align-self:flex-start;">한계 2</span>
+            <h3>주제 자체의 난도</h3>
+            <p>안내방송은 <b>같은 녹음 재생</b>이라 변하는 건 채널(차량 PA·객차 음향·마이크)뿐. 채널 수 = 탑승 수라 처음 타는 열차의 역 이름 분류는 본질적 천장</p>
+          </div>
+        </div>
+        <div class="func-card anim d4" style="background:#F1FAF4;border:1.5px solid var(--good);margin-top:4px;">
+          <span class="badge ok" style="align-self:flex-start;">실제 구현</span>
+          <h3>차임벨(출발 신호음) 기반 검출</h3>
+          <p>채널이 바뀌어도 똑같이 들리는 <b>출발 신호음</b>을 채널 불변 이벤트 마커로 검출 — 7회 LOO <b>recall 94%</b>(74/79). STM32 온디바이스에서 <b>마이크 → 검출 → 실시간 알림</b> 동작 확인</p>
+        </div>
+      </div>
+    </section>
+  </div></div>
+
+  <!-- ===== Q&A ===== -->
+  <div class="row"><div class="track">
+    <section class="slide qa" data-label="Q&A">
+      <div class="qa-orbs"><span></span><span></span><span></span><span></span></div>
+      <div class="anim d1"><h1>Q &amp; A</h1></div>
+      <p class="anim d2">감사합니다. 질문 부탁드립니다.</p>
+      <div class="meta anim d3">
+        <span class="chip">🎓 임베디드시스템설계</span>
+        <span class="chip">🚇 Hey now! · 1호선</span>
+        <span class="chip">🔗 <a href="https://github.com/snup2e/hey-now" target="_blank" rel="noopener">github.com/snup2e/hey-now</a></span>
+      </div>
+    </section>
+  </div></div>
+
+</div></div>
+
+<script>
+/* ===== 2D deck nav: 섹션=세로(row), 섹션 내=가로(track) ===== */
+const stage=document.getElementById('stage');
+const rowEls=Array.from(stage.querySelectorAll('.row'));
+const tracks=rowEls.map(r=>r.querySelector('.track'));
+const progress=document.getElementById('progress');
+const secHost=document.getElementById('secnav');
+const flat=[];
+rowEls.forEach((r,ri)=>{Array.from(r.querySelectorAll('.slide')).forEach((s,ci)=>{s.dataset.row=ri;s.dataset.col=ci;flat.push(s);});});
+let cur=0;
+
+const SECTIONS=['문제 정의','시스템 아키텍처','데이터 수집·분석','접근 ① 분류와 벽','방향 전환','Demo','결론'];
+SECTIONS.forEach((name,i)=>{const d=document.createElement('div');d.className='sn';d.innerHTML='<span class="sd"></span><span class="si">0'+(i+1)+'</span><span class="sl">'+name+'</span>';secHost.appendChild(d);});
+const secEls=Array.from(secHost.children);
+const secFirst={};
+flat.forEach((s,i)=>{const k=s.dataset.sec;if(k!==undefined&&secFirst[k]===undefined)secFirst[k]=i;});
+secEls.forEach((el,i)=>el.addEventListener('click',()=>{if(secFirst[i]!==undefined)go(secFirst[i]);}));
+
+function go(i){
+  cur=Math.max(0,Math.min(flat.length-1,i));
+  const sl=flat[cur], row=+sl.dataset.row, col=+sl.dataset.col;
+  stage.style.transform='translateY('+(-row*100)+'vh)';
+  tracks[row].style.transform='translateX('+(-col*100)+'vw)';
+  flat.forEach(s=>s.classList.remove('active')); sl.classList.add('active');
+  progress.style.width=(((cur+1)/flat.length)*100)+'%';
+  const sec=sl.dataset.sec;
+  if(sec===undefined){secHost.classList.remove('show');}
+  else{secHost.classList.add('show');secEls.forEach((el,k)=>{el.classList.remove('active','done');if(k<+sec)el.classList.add('done');else if(k===+sec)el.classList.add('active');});}
+}
+go(0);
+
+document.querySelectorAll('[data-jump]').forEach(el=>el.addEventListener('click',()=>{const lab=el.dataset.jump;const idx=flat.findIndex(s=>s.dataset.label===lab);if(idx>=0)go(idx);}));
+
+const hm=document.getElementById('help-modal');
+window.addEventListener('keydown',(e)=>{
+  if(hm.classList.contains('is-open')){if(e.key==='Escape')hm.classList.remove('is-open');return;}
+  if(e.target&&e.target.tagName==='VIDEO'&&[' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key)>=0)return;
+  switch(e.key){
+    case 'ArrowRight':case 'ArrowDown':case 'PageDown':case ' ':e.preventDefault();go(cur+1);break;
+    case 'ArrowLeft':case 'ArrowUp':case 'PageUp':e.preventDefault();go(cur-1);break;
+    case 'Home':e.preventDefault();go(0);break;
+    case 'End':e.preventDefault();go(flat.length-1);break;
+    case 'f':case 'F':e.preventDefault();document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();break;
+    case '?':e.preventDefault();hm.classList.add('is-open');break;
+  }
+});
+let wheelLock=0;
+window.addEventListener('wheel',(e)=>{const n=performance.now();if(n<wheelLock)return;if(Math.abs(e.deltaY)<18&&Math.abs(e.deltaX)<18)return;wheelLock=n+700;go(cur+((e.deltaY+e.deltaX)>0?1:-1));},{passive:true});
+document.getElementById('help-open').addEventListener('click',()=>hm.classList.add('is-open'));
+document.getElementById('help-close').addEventListener('click',()=>hm.classList.remove('is-open'));
+hm.addEventListener('click',(e)=>{if(e.target===hm)hm.classList.remove('is-open');});
+
+/* ===== headless 캡처 모드: ?shot=N → 해당 슬라이드만 정적 표시 ===== */
+(function(){var q=new URLSearchParams(location.search);if(!q.has('shot'))return;document.body.classList.add('shot');var n=Math.max(0,Math.min(flat.length-1,parseInt(q.get('shot'),10)||0));go(n);document.title='shot-'+n+'/'+flat.length;})();
+</script>
+</body>
+</html>
